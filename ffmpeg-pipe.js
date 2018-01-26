@@ -15,6 +15,7 @@ function pipe() {
         '-preset', config.preset,
         '-vcodec', 'libx264',
         '-vf', `crop=iw:ih-${config.cropHeight * 2}:0:${config.cropHeight}, scale=${config.scaleWidth}:-2`,
+        '-tune', 'grain',
         '-b:v', config.videoBitrate,
         '-profile:v', 'high',
         '-acodec', 'aac',
