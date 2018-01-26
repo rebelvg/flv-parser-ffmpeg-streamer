@@ -426,12 +426,6 @@ readLine.on('line', function (line) {
     if (line === 's') {
         switchVideoRequest();
     }
-
-    if (line === 'w') {
-        console.log('writing sequence...');
-
-        writeSequence();
-    }
 });
 
 let switchVideoRequestFlag = false;
