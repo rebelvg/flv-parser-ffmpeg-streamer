@@ -7,6 +7,7 @@ const ReadLine = require('readline');
 const microseconds = require('microseconds');
 const NanoTimer = require('nanotimer');
 
+const config = require('./config.json');
 const {parseMetadata, parseAudio, parseVideo} = require('./modules/parse-data');
 const ffmpegPipe = require('./ffmpeg-pipe');
 const preparePaused = require('./prepare-paused');
@@ -333,6 +334,8 @@ async function writeSequence() {
 
         //console.log(Date.now() - startTime, lastSwitchedTimestamp, lastTimestamp, packet.header.timestampLower, clonedPacket.header.timestampLower, cursor.lastTimestamp);
 
+        //console.log(clonedPacket.header.timestampLower, clonedPacket.header.packetType, clonedPacket.header.payloadSize);
+
         let writingStartTime = microseconds.now();
 
         writePacket(clonedPacket);
@@ -397,7 +400,7 @@ async function writeSequence() {
             cursor.savedPackets = _.cloneDeep(savedPackets2Copy);
 
             _.forEach(cursor.savedPackets, (flvPacket) => {
-                flvPacket.header.timestampLower = packet.header.timestampLower + flvPacket.header.timestampLower;
+                flvPacket.header.timestampLower = packet.header.timestampLower + flvPacket.header.timestampLower - Math.ceil(1000 / _.toNumber(config.framerate));
             });
 
             console.log(new Date(), 'cloned packets.', packet.header.timestampLower, _.first(cursor.savedPackets).header.timestampLower);
@@ -444,7 +447,7 @@ function switchVideoRequested() {
 
     streamingEncode = !streamingEncode;
 
-    lastSwitchedTimestamp = lastTimestamp;
+    lastSwitchedTimestamp = lastTimestamp - Math.ceil(1000 / _.toNumber(config.framerate));
 
     lastTimestamps[lastTimestampsIndex].lastTimestamp = lastPacketTimestamp;
 
@@ -456,5 +459,5 @@ function switchVideoRequested() {
 setTimeout(function () {
     writeSequence();
 
-    //setInterval(switchVideo, 30000);
+    //setInterval(switchVideoRequest, 20000);
 }, 5000);
