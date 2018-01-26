@@ -1,0 +1,13 @@
+{
+  "name": "ffmpeg-streamer",
+  "version": "1.0.0",
+  "main": "parse-stream.js",
+  "license": "MIT",
+  "dependencies": {
+    "bitwise": "^0.2.0",
+    "lodash": "^4.17.4",
+    "microseconds": "^0.1.0",
+    "nanotimer": "^0.3.15",
+    "stream-parser": "^0.3.1"
+  }
+}
