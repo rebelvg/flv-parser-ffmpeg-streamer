@@ -10,5 +10,8 @@
   "cropHeight": "0",
   "scaleWidth": "-2",
   "videoBitrate": "4000k",
-  "publishLink": "-"
+  "publishLink": "mpc",
+  "publishLinks": {
+    "mpc": "-"
+  }
 }

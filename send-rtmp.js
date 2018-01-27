@@ -9,6 +9,8 @@ const mpcPath = require('./config.json').mpcPath;
 const logger = require('./logger');
 
 function send() {
+    let publishLink = _.get(config.publishLinks, [config.publishLink], '-');
+
     const ffmpegProcess = childProcess.spawn(ffmpegPath, [
         //'-re',
         //'-nostats',
@@ -17,12 +19,12 @@ function send() {
         '-vcodec', 'copy',
         '-acodec', 'copy',
         '-f', 'flv',
-        config.publishLink
+        publishLink
     ], {
         stdio: 'pipe'
     });
 
-    if (config.publishLink === '-') {
+    if (publishLink === '-') {
         const mpcProcess = childProcess.spawn(mpcPath, [
             'playpath', '-'
         ], {
