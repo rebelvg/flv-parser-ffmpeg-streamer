@@ -341,13 +341,13 @@ async function writeSequence() {
         if (!isDrained) {
             //console.log('not drained, have to wait before writing...');
 
-            await new Promise(resolve => {
-                ffmpegSendProcess.stdin.once('drain', function () {
-                    //console.log('stdin drain once');
-
-                    resolve();
-                });
-            });
+            // await new Promise(resolve => {
+            //     ffmpegSendProcess.stdin.once('drain', function () {
+            //         //console.log('stdin drain once');
+            //
+            //         resolve();
+            //     });
+            // });
         }
 
         drainingWaitingTime += microseconds.now() - drainingStartTime;

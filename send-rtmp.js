@@ -10,10 +10,10 @@ const logger = require('./logger');
 
 function send() {
     const ffmpegProcess = childProcess.spawn(ffmpegPath, [
-        '-re',
+        //'-re',
         //'-nostats',
         '-i', '-',
-        '-isync',
+        //'-isync',
         '-vcodec', 'copy',
         '-acodec', 'copy',
         '-f', 'flv',
