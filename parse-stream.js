@@ -388,7 +388,8 @@ async function writeSequence() {
             lastTimestamp: lastTimestamp,
             clonedPacketTimestamp: clonedPacket.header.timestampLower,
             cursorLastTimestamp: cursor.lastTimestamp,
-            clonedPacketPayloadSize: clonedPacket.header.payloadSize
+            clonedPacketPayloadSize: clonedPacket.header.payloadSize,
+            isDrained: isDrained
         }]);
 
         lastTimestamp = clonedPacket.header.timestampLower;
