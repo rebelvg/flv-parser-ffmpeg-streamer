@@ -1,14 +1,16 @@
 const childProcess = require('child_process');
 const fs = require('fs');
 const _ = require('lodash');
+const os = require('os');
 
 const config = require('./config.json');
 const ffmpegPath = require('./config.json').ffmpegPath;
+const logger = require('./logger');
 
 function pipe() {
     const ffmpegProcess = childProcess.spawn(ffmpegPath, [
         '-ss', config.videoStart,
-        '-nostats',
+        //'-nostats',
         '-re',
         '-i', config.videoFile,
         '-isync',
@@ -33,6 +35,12 @@ function pipe() {
 
     let encodedVideo = fs.createWriteStream('encoded.flv');
     ffmpegProcess.stdout.pipe(encodedVideo);
+
+    ffmpegProcess.stderr.setEncoding('utf8');
+
+    ffmpegProcess.stderr.on('data', function (data) {
+        logger(['ffmpeg-pipe', data]);
+    });
 
     return ffmpegProcess;
 }

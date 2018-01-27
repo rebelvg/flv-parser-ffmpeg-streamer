@@ -1,15 +1,17 @@
 const childProcess = require('child_process');
 const fs = require('fs');
 const _ = require('lodash');
+const os = require('os');
 
 const config = require('./config.json');
 const ffmpegPath = require('./config.json').ffmpegPath;
 const mpcPath = require('./config.json').mpcPath;
+const logger = require('./logger');
 
 function send() {
     const ffmpegProcess = childProcess.spawn(ffmpegPath, [
         '-re',
-        '-nostats',
+        //'-nostats',
         '-i', '-',
         '-isync',
         '-vcodec', 'copy',
@@ -33,7 +35,7 @@ function send() {
     ffmpegProcess.stderr.setEncoding('utf8');
 
     ffmpegProcess.stderr.on('data', function (data) {
-        //console.log(data);
+        logger(['send-rtmp', data]);
     });
 
     return ffmpegProcess;

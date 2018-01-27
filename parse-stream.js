@@ -6,12 +6,14 @@ const childProcess = require('child_process');
 const ReadLine = require('readline');
 const microseconds = require('microseconds');
 const NanoTimer = require('nanotimer');
+const os = require('os');
 
 const config = require('./config.json');
 const {parseMetadata, parseAudio, parseVideo} = require('./modules/parse-data');
 const ffmpegPipe = require('./ffmpeg-pipe');
 const preparePaused = require('./prepare-paused');
 const sendRtmp = require('./send-rtmp');
+const logger = require('./logger');
 
 //const flvStream = fs.createReadStream('video.flv');
 
@@ -133,7 +135,7 @@ flvStream2.pipe(flvStreamParser2);
 let mainHeader = null;
 
 flvStreamParser.on('header', function (header) {
-    console.log(header);
+    logger([header], true);
 
     mainHeader = header;
 });
@@ -149,7 +151,7 @@ flvStreamParser.on('packet', function (flvPacket) {
     if (!firstMetaDataPacket && flvPacket.header.packetType === 18) {
         let metadata = parseMetadata(flvPacket.payload);
 
-        console.log('flvStreamParser', metadata);
+        logger(['flvStreamParser', metadata], true);
 
         firstMetaDataPacket = flvPacket;
     }
@@ -157,7 +159,7 @@ flvStreamParser.on('packet', function (flvPacket) {
     if (!firstAudioPacket && flvPacket.header.packetType === 8) {
         let audioData = parseAudio(flvPacket.payload);
 
-        console.log('flvStreamParser', audioData);
+        logger(['flvStreamParser', audioData], true);
 
         firstAudioPacket = flvPacket;
     }
@@ -165,7 +167,7 @@ flvStreamParser.on('packet', function (flvPacket) {
     if (!firstVideoPacket && flvPacket.header.packetType === 9) {
         let videoData = parseVideo(flvPacket.payload);
 
-        console.log('flvStreamParser', videoData, flvPacket.header.payloadSize);
+        logger(['flvStreamParser', videoData], true);
 
         firstVideoPacket = flvPacket;
     }
@@ -182,19 +184,19 @@ flvStreamParser2.on('packet', function (flvPacket) {
     if (flvPacket.header.timestampLower === 0 && flvPacket.header.packetType === 18) {
         let metadata = parseMetadata(flvPacket.payload);
 
-        console.log('flvStreamParser2', metadata);
+        logger(['flvStreamParser2', metadata], true);
     }
 
     if (flvPacket.header.timestampLower === 0 && flvPacket.header.packetType === 8) {
         let audioData = parseAudio(flvPacket.payload);
 
-        console.log('flvStreamParser2', audioData);
+        logger(['flvStreamParser2', audioData], true);
     }
 
     if (flvPacket.header.timestampLower === 0 && flvPacket.header.packetType === 9) {
         let videoData = parseVideo(flvPacket.payload);
 
-        console.log('flvStreamParser2', videoData, flvPacket.header.payloadSize);
+        logger(['flvStreamParser2', videoData], true);
     }
 
     if ([1, 2, 3].includes(flvStreamParserPacketCount)) return;
@@ -211,7 +213,7 @@ flvStreamParser2.on('packet', function (flvPacket) {
             savedPackets2.push(flvPacket);
             savedPackets2Copy.push(flvPacket);
         } else {
-            console.log('savedPackets2', 'skipping saving for', flvPacket.header.packetType);
+            logger(['savedPackets2', 'skipping saving for', flvPacket.header.packetType], true);
         }
     } else {
         savedPackets2.push(flvPacket);
@@ -232,8 +234,6 @@ function writePacket(flvPacket) {
 
     isDrained = ffmpegSendProcess.stdin.write(Buffer.concat([flvPacket.header.buildPacketHeader(), flvPacket.payload]));
 
-    //console.log(isDrained);
-
     prevPacket = flvPacket;
 }
 
@@ -246,13 +246,11 @@ function savePacket(flvPacket) {
         if (flvPacket.header.timestampLower >= lastPacket.header.timestampLower) {
             savedPackets.push(flvPacket);
         } else {
-            console.log('savedPackets', 'skipping saving for', flvPacket.header.packetType);
+            logger(['savedPackets', 'skipping saving for', flvPacket.header.packetType], true);
         }
     } else {
         savedPackets.push(flvPacket);
     }
-
-    //console.log('saved', flvPacket.header.timestampLower);
 }
 
 let nanoTimer = new NanoTimer();
@@ -287,15 +285,15 @@ let lastPacketTimestamp = 0;
 let ffmpegSendProcess = sendRtmp();
 
 ffmpegSendProcess.stdin.on('close', function () {
-    console.log('stdin close');
+    logger(['stdin close'], true);
 });
 
 ffmpegSendProcess.stdin.on('error', function (err) {
-    console.log('stdin error', err);
+    logger(['stdin error', err], true);
 });
 
 ffmpegSendProcess.stdin.on('finish', function () {
-    console.log('stdin finish');
+    logger(['stdin finish'], true);
 });
 
 ffmpegSendProcess.stdin.on('drain', function () {
@@ -303,7 +301,7 @@ ffmpegSendProcess.stdin.on('drain', function () {
 });
 
 async function writeSequence() {
-    console.log('writing...');
+    logger(['writing...'], true);
 
     let startTime = Date.now();
 
@@ -317,7 +315,7 @@ async function writeSequence() {
         let packet = _.first(cursor.savedPackets);
 
         if (!packet) {
-            console.log('packet not found, skipping...');
+            logger(['packet not found, skipping...'], true);
 
             // console.log('writing went for', Date.now() - startTime);
             //
@@ -331,10 +329,6 @@ async function writeSequence() {
         let clonedPacket = _.cloneDeep(packet);
 
         clonedPacket.header.timestampLower = lastSwitchedTimestamp + packet.header.timestampLower - cursor.lastTimestamp;
-
-        //console.log(Date.now() - startTime, lastSwitchedTimestamp, lastTimestamp, packet.header.timestampLower, clonedPacket.header.timestampLower, cursor.lastTimestamp);
-
-        //console.log(clonedPacket.header.timestampLower, clonedPacket.header.packetType, clonedPacket.header.payloadSize);
 
         let writingStartTime = microseconds.now();
 
@@ -360,36 +354,42 @@ async function writeSequence() {
 
         let nextPacket = cursor.savedPackets[1];
 
-        let waitTime;
+        let waitTime = 0;
+
+        let threshold = clonedPacket.header.timestampLower - (Date.now() - startTime) + drainingWaitingTime / 1000;
 
         if (nextPacket) {
             waitTime = nextPacket.header.timestampLower * 1000 - packet.header.timestampLower * 1000 - (writingEndTime - writingStartTime) - timestampDebt;
 
-            if (packet.header.timestampLower > nextPacket.header.timestampLower) {
-                console.log(cursor.savedPackets.length, nextPacket.header.timestampLower - packet.header.timestampLower);
-                console.log(packet.header.packetType, nextPacket.header.packetType);
-            }
-
-            let threshold = clonedPacket.header.timestampLower - (Date.now() - startTime) + drainingWaitingTime / 1000;
-
-            //console.log('threshold', threshold);
-
             if (waitTime > 0) {
                 timestampDebt = 0;
 
-                if (threshold > 0) {
+                if (threshold > 200) {
                     await sleep(waitTime);
                 } else {
                     await sleep(waitTime - 1000);
                 }
             } else {
                 timestampDebt = waitTime * -1;
-
-                //console.log('debt', timestampDebt, nextPacket.header.timestampLower - packet.header.timestampLower, writingEndTime - writingStartTime);
             }
         }
 
-        //console.log('writing packet...', Date.now() - startTime, packet.header.timestampLower, cursor.savedPackets.length);
+        logger(['writing packet...', {
+            threshold: threshold,
+            runningTime: Date.now() - startTime,
+            drainingWaitingTime: drainingWaitingTime / 1000,
+            currentTimestamp: packet.header.timestampLower,
+            nextPacketTimestamp: _.get(nextPacket, ['header', 'timestampLower'], 'no-next-packet'),
+            currentPacketsLeft: cursor.savedPackets.length,
+            waitTime: waitTime / 1000,
+            debt: timestampDebt / 1000,
+            writeTime: (writingEndTime - writingStartTime) / 1000,
+            lastSwitchedTimestamp: lastSwitchedTimestamp,
+            lastTimestamp: lastTimestamp,
+            clonedPacketTimestamp: clonedPacket.header.timestampLower,
+            cursorLastTimestamp: cursor.lastTimestamp,
+            clonedPacketPayloadSize: clonedPacket.header.payloadSize
+        }]);
 
         lastTimestamp = clonedPacket.header.timestampLower;
         lastPacketTimestamp = packet.header.timestampLower;
@@ -403,11 +403,12 @@ async function writeSequence() {
                 flvPacket.header.timestampLower = packet.header.timestampLower + flvPacket.header.timestampLower - Math.ceil(1000 / _.toNumber(config.framerate));
             });
 
-            console.log(new Date(), 'cloned packets.', packet.header.timestampLower, _.first(cursor.savedPackets).header.timestampLower);
+            logger(['cloned packets.', packet.header.timestampLower, _.first(cursor.savedPackets).header.timestampLower], true);
         }
 
         if (lastTimestampsIndex === 0 && cursor.savedPackets.length === 0) {
-            console.log('no main packets left.');
+            logger(['no main packets left.'], true);
+
             switchVideoRequest();
         }
 
@@ -437,7 +438,7 @@ function switchVideoRequest() {
 function switchVideoRequested() {
     if (!switchVideoRequestFlag) return;
 
-    console.log('switched videos.');
+    logger(['switched videos.'], true);
 
     streamingEncode = !streamingEncode;
 
