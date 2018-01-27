@@ -8,25 +8,46 @@ const ffmpegPath = require('./config.json').ffmpegPath;
 const logger = require('./logger');
 
 function pipe() {
-    const ffmpegProcess = childProcess.spawn(ffmpegPath, [
-        '-ss', config.videoStart,
-        //'-nostats',
-        '-re',
-        '-i', config.videoFile,
-        '-isync',
-        '-preset', config.preset,
-        '-vcodec', 'libx264',
-        '-vf', `crop=iw:ih-${config.cropHeight * 2}:0:${config.cropHeight}, scale=${config.scaleWidth}:-2`,
-        '-tune', 'grain',
-        '-b:v', config.videoBitrate,
-        '-profile:v', 'high',
-        '-acodec', 'aac',
-        '-ac', '2',
-        '-ar', '48000',
-        '-b:a', '256k',
-        '-f', 'flv',
-        '-'
-    ], {
+    let ffmpegParams;
+
+    if (config.copyVideo) {
+        ffmpegParams = [
+            '-ss', config.videoStart,
+            //'-nostats',
+            '-re',
+            '-i', config.videoFile,
+            '-isync',
+            '-c:v', 'copy',
+            '-acodec', 'aac',
+            '-ac', '2',
+            '-ar', '48000',
+            '-b:a', '256k',
+            '-f', 'flv',
+            '-'
+        ];
+    } else {
+        ffmpegParams = [
+            '-ss', config.videoStart,
+            //'-nostats',
+            //'-re',
+            '-i', config.videoFile,
+            //'-isync',
+            '-preset', config.preset,
+            '-vcodec', 'libx264',
+            '-vf', `crop=iw:ih-${config.cropHeight * 2}:0:${config.cropHeight}, scale=${config.scaleWidth}:-2`,
+            '-tune', 'grain',
+            '-b:v', config.videoBitrate,
+            '-profile:v', 'high',
+            '-acodec', 'aac',
+            '-ac', '2',
+            '-ar', '48000',
+            '-b:a', '256k',
+            '-f', 'flv',
+            '-'
+        ];
+    }
+
+    const ffmpegProcess = childProcess.spawn(ffmpegPath, ffmpegParams, {
         stdio: 'pipe'
     });
 
