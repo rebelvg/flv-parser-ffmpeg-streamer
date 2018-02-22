@@ -6,26 +6,41 @@ const config = require('./config.json');
 const ffmpegPath = require('./config.json').ffmpegPath;
 
 function preparePaused() {
-    const ffmpegProcessVideo = childProcess.spawn(ffmpegPath, [
-        '-loop', '1',
-        '-i', config.pausedImg,
-        '-t', '10',
-        '-r', config.framerate,
-        '-vf', `scale=${config.scaleWidth}:-2`,
-        '-preset', config.preset,
-        '-c:v', 'libx264',
-        '-b:v', config.videoBitrate,
-        '-minrate', config.videoBitrate,
-        '-maxrate', config.videoBitrate,
-        '-bufsize', config.videoBitrate,
-        '-x264-params', 'nal-hrd=cbr',
-        '-profile:v', 'high',
-        '-pix_fmt', 'yuv420p',
-        '-f', 'flv',
-        '-'
-    ], {
-        stdio: 'pipe'
-    });
+    let ffmpegProcessVideo;
+
+    if (!config.copyVideo) {
+        ffmpegProcessVideo = childProcess.spawn(ffmpegPath, [
+            '-loop', '1',
+            '-i', config.pausedImg,
+            '-t', '10',
+            '-r', config.framerate,
+            '-vf', `scale=${config.scaleWidth}:-2`,
+            '-preset', config.preset,
+            '-c:v', 'libx264',
+            '-b:v', config.videoBitrate,
+            '-minrate', config.videoBitrate,
+            '-maxrate', config.videoBitrate,
+            '-bufsize', config.videoBitrate,
+            '-x264-params', 'nal-hrd=cbr',
+            '-profile:v', 'high',
+            '-pix_fmt', 'yuv420p',
+            '-f', 'flv',
+            '-'
+        ], {
+            stdio: 'pipe'
+        });
+    } else {
+        ffmpegProcessVideo = childProcess.spawn(ffmpegPath, [
+            '-i', config.videoFile,
+            '-t', '0.3',
+            '-vcodec', 'copy',
+            '-an',
+            '-f', 'flv',
+            '-',
+        ], {
+            stdio: 'pipe'
+        });
+    }
 
     const ffmpegProcessAudio = childProcess.spawn(ffmpegPath, [
         '-f', 'lavfi',

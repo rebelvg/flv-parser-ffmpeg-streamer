@@ -404,7 +404,7 @@ async function writeSequence() {
                 flvPacket.header.timestampLower = packet.header.timestampLower + flvPacket.header.timestampLower - Math.ceil(1000 / _.toNumber(config.framerate));
             });
 
-            logger(['cloned packets.', packet.header.timestampLower, _.first(cursor.savedPackets).header.timestampLower], true);
+            logger(['cloned packets.', packet.header.timestampLower, _.first(cursor.savedPackets).header.timestampLower]);
         }
 
         if (lastTimestampsIndex === 0 && cursor.savedPackets.length === 0) {
