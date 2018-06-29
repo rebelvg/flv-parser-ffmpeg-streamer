@@ -456,4 +456,4 @@ setTimeout(function () {
     writeSequence();
 
     //setInterval(switchVideoRequest, 20000);
-}, 5000);
+}, 20000);
