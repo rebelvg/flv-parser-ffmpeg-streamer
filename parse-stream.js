@@ -103,7 +103,7 @@ class FlvStreamParser extends Writable {
     onPacketHeader(packetHeaderBuffer, output) {
         const packetHeader = new FlvPacketHeader(packetHeaderBuffer);
 
-        this._bytes(packetHeader.payloadSize, function (packetPayloadBuffer, output) {
+        this._bytes(packetHeader.payloadSize, (packetPayloadBuffer, output) => {
             this.emit('packet', new FlvPacket(packetHeader, packetPayloadBuffer));
 
             this._bytes(15, this.onPacketHeader);
