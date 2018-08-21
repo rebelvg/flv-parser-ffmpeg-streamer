@@ -24,6 +24,13 @@ function send() {
         stdio: 'pipe'
     });
 
+    // const outputVideo = fs.createWriteStream('output.flv');
+    // ffmpegProcess.stdout.pipe(outputVideo);
+    //
+    // return {
+    //     stdin: outputVideo
+    // };
+
     if (publishLink === '-') {
         const mpcProcess = childProcess.spawn(mpcPath, [
             'playpath', '-'

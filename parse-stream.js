@@ -87,9 +87,6 @@ class FlvPacket {
             case 18: {
                 return 'metadata';
             }
-            case 99: {
-                return 'subtitles';
-            }
             default: {
                 return 'unknown';
             }
