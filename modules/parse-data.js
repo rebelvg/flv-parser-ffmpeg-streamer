@@ -31,6 +31,24 @@ const TYPES = {
     }
 };
 
+function createSubtitlesMetadata(subtitles) {
+    const subtitlesMetadata = Buffer.alloc(34 + subtitles.length);
+
+    subtitlesMetadata.writeInt8(2, 0);
+    subtitlesMetadata.writeInt8(10, 2);
+    subtitlesMetadata.write('onMetaData', 3);
+    subtitlesMetadata.writeInt8(1, 13);
+    subtitlesMetadata.writeUInt32BE(8, 14);
+    subtitlesMetadata.writeInt8('subtitles'.length, 19);
+    subtitlesMetadata.write('subtitles', 20);
+    subtitlesMetadata.writeInt8(2, 29);
+    subtitlesMetadata.writeInt16BE(subtitles.length, 30);
+    subtitlesMetadata.write(subtitles, 32);
+    subtitlesMetadata.writeInt16BE(9, 32 + subtitles.length);
+
+    return subtitlesMetadata;
+}
+
 function parseMetadata(payload) {
     if (payload.readUInt8(0) !== 2) throw new Error('Unknown metadata format.');
 
@@ -46,6 +64,7 @@ function parseMetadata(payload) {
 
     parseOffset++;
 
+    //number of items in metadata hash-map
     let metadataLength = payload.readUInt32BE(parseOffset);
 
     parseOffset += 5;
@@ -101,6 +120,8 @@ function parseMetadata(payload) {
         parseOffset++;
     }
 
+    //console.log(payload.slice(parseOffset));
+
     return params;
 }
 
@@ -147,3 +168,4 @@ function parseVideo(payload) {
 exports.parseMetadata = parseMetadata;
 exports.parseAudio = parseAudio;
 exports.parseVideo = parseVideo;
+exports.createSubtitlesMetadata = createSubtitlesMetadata;

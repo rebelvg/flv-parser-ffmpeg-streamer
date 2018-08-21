@@ -9,7 +9,7 @@ const NanoTimer = require('nanotimer');
 const os = require('os');
 
 const config = require('./config.json');
-const {parseMetadata, parseAudio, parseVideo} = require('./modules/parse-data');
+const {parseMetadata, parseAudio, parseVideo, createSubtitlesMetadata} = require('./modules/parse-data');
 const ffmpegPipe = require('./ffmpeg-pipe');
 const preparePaused = require('./prepare-paused');
 const sendRtmp = require('./send-rtmp');
@@ -369,10 +369,12 @@ async function writeSequence() {
         if (clonedPacket.getType() === 'video') {
             const subtitlePacket = _.cloneDeep(clonedPacket);
 
+            const subtitles = createSubtitlesMetadata('test subtitles');
+
             subtitlePacket.header.prevPacketSize = clonedPacket.header.payloadSize;
-            subtitlePacket.header.packetType = 19;
-            subtitlePacket.header.payloadSize = 8;
-            subtitlePacket.payload = Buffer.alloc(8, 0xFF);
+            subtitlePacket.header.packetType = 18;
+            subtitlePacket.header.payloadSize = subtitles.length;
+            subtitlePacket.payload = subtitles;
 
             writePacket(subtitlePacket);
         }
