@@ -305,6 +305,16 @@ async function writeSequence() {
 
     let startTime = Date.now();
 
+    while (true) {
+        if (savedPackets.length > 4) {
+            break;
+        }
+
+        logger(['waiting at least 5 packets'], true);
+
+        await sleep(1000 * 1000);
+    }
+
     ffmpegSendProcess.stdin.write(mainHeader.buildHeader());
 
     let drainingWaitingTime = 0;
@@ -452,8 +462,4 @@ function switchVideoRequested() {
     switchVideoRequestFlag = false;
 }
 
-setTimeout(function () {
-    writeSequence();
-
-    //setInterval(switchVideoRequest, 20000);
-}, 20000);
+writeSequence();

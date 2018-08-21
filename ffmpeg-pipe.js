@@ -29,7 +29,7 @@ function pipe() {
         ffmpegParams = [
             '-ss', config.videoStart,
             //'-nostats',
-            //'-re',
+            '-re',
             '-i', config.videoFile,
             //'-isync',
             '-preset', config.preset,
@@ -60,7 +60,7 @@ function pipe() {
     ffmpegProcess.stderr.setEncoding('utf8');
 
     ffmpegProcess.stderr.on('data', function (data) {
-        logger(['ffmpeg-pipe', data]);
+        logger(['ffmpeg-pipe', data], true);
     });
 
     return ffmpegProcess;
