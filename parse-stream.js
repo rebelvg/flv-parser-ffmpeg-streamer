@@ -75,6 +75,26 @@ class FlvPacket {
         this.payload = payload;
         this.fullPacketSize = 15 + packetHeader.payloadSize;
     }
+
+    getType() {
+        switch (this.header.packetType) {
+            case 8: {
+                return 'audio';
+            }
+            case 9: {
+                return 'video';
+            }
+            case 18: {
+                return 'metadata';
+            }
+            case 99: {
+                return 'subtitles';
+            }
+            default: {
+                return 'unknown';
+            }
+        }
+    }
 }
 
 class FlvStreamParser extends Writable {
@@ -303,8 +323,6 @@ ffmpegSendProcess.stdin.on('drain', function () {
 async function writeSequence() {
     logger(['writing...'], true);
 
-    let startTime = Date.now();
-
     while (true) {
         if (savedPackets.length > 4) {
             break;
@@ -314,6 +332,10 @@ async function writeSequence() {
 
         await sleep(1000 * 1000);
     }
+
+    await sleep(5 * 1000 * 1000);
+
+    let startTime = Date.now();
 
     ffmpegSendProcess.stdin.write(mainHeader.buildHeader());
 
@@ -343,6 +365,17 @@ async function writeSequence() {
         let writingStartTime = microseconds.now();
 
         writePacket(clonedPacket);
+
+        if (clonedPacket.getType() === 'video') {
+            const subtitlePacket = _.cloneDeep(clonedPacket);
+
+            subtitlePacket.header.prevPacketSize = clonedPacket.header.payloadSize;
+            subtitlePacket.header.packetType = 19;
+            subtitlePacket.header.payloadSize = 8;
+            subtitlePacket.payload = Buffer.alloc(8, 0xFF);
+
+            writePacket(subtitlePacket);
+        }
 
         let writingEndTime = microseconds.now();
 

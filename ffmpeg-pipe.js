@@ -54,13 +54,13 @@ function pipe() {
     //let fileReadStream = fs.createReadStream(fileReadPath);
     //fileReadStream.pipe(ffmpegProcess.stdin);
 
-    let encodedVideo = fs.createWriteStream('encoded.flv');
+    const encodedVideo = fs.createWriteStream('encoded.flv');
     ffmpegProcess.stdout.pipe(encodedVideo);
 
     ffmpegProcess.stderr.setEncoding('utf8');
 
     ffmpegProcess.stderr.on('data', function (data) {
-        logger(['ffmpeg-pipe', data], true);
+        logger(['ffmpeg-pipe', data]);
     });
 
     return ffmpegProcess;
