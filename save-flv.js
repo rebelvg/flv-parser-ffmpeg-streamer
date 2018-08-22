@@ -3,7 +3,7 @@ const _ = require('lodash');
 
 const flvParser = require('./flv-parser');
 
-let parsedFlv = flvParser('video.flv');
+let parsedFlv = flvParser('C:\\Users\\rebel\\Desktop\\dev.flv');
 
 let writeBuffer = [];
 

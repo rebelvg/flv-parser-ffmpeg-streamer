@@ -60,14 +60,27 @@ function parseMetadata(payload) {
 
     parseOffset += stringLength;
 
-    if (payload.readUInt8(parseOffset) !== 8) throw new Error('Unknown metadata type.');
+    const metadataObjType = payload.readUInt8(parseOffset);
+
+    if (![3, 8].includes(metadataObjType)) throw new Error(`Unknown metadata type. ${metadataObjType}`);
 
     parseOffset++;
 
-    //number of items in metadata hash-map
-    let metadataLength = payload.readUInt32BE(parseOffset);
+    switch (metadataObjType) {
+        case 3: {
+            parseOffset += 1;
 
-    parseOffset += 5;
+            break;
+        }
+        case 8: {
+            //number of items in metadata hash-map
+            let metadataLength = payload.readUInt32BE(parseOffset);
+
+            parseOffset += 5;
+
+            break;
+        }
+    }
 
     let params = {};
 

@@ -66,7 +66,7 @@ function parseFlv(fileName) {
 
     let metadata = parseMetadata(firstPacket.payload);
 
-    console.log(metadata);
+    console.log('metaData', metadata);
 
     let contentPackets = [];
 
@@ -86,17 +86,19 @@ function parseFlv(fileName) {
             if (!audioParsed) {
                 let audioData = parseAudio(flvPacket.payload);
 
-                console.log(audioData);
+                console.log('audioData', audioData);
 
                 audioParsed = true;
             }
         }
 
         if (flvPacket.packetType === 9) {
+            //console.log(flvPacket.timestampLower);
+
             if (!videoParsed) {
                 let videoData = parseVideo(flvPacket.payload);
 
-                console.log(videoData);
+                console.log('videoData', videoData);
 
                 videoParsed = true;
             }

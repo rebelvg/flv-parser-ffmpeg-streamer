@@ -307,6 +307,8 @@ ffmpegSendProcess.stdin.on('close', function () {
 
 ffmpegSendProcess.stdin.on('error', function (err) {
     logger(['stdin error', err], true);
+
+    throw err;
 });
 
 ffmpegSendProcess.stdin.on('finish', function () {
@@ -363,18 +365,18 @@ async function writeSequence() {
 
         writePacket(clonedPacket);
 
-        if (clonedPacket.getType() === 'video') {
-            const subtitlePacket = _.cloneDeep(clonedPacket);
-
-            const subtitles = createSubtitlesMetadata('test subtitles');
-
-            subtitlePacket.header.prevPacketSize = clonedPacket.header.payloadSize;
-            subtitlePacket.header.packetType = 18;
-            subtitlePacket.header.payloadSize = subtitles.length;
-            subtitlePacket.payload = subtitles;
-
-            writePacket(subtitlePacket);
-        }
+        // if (clonedPacket.getType() === 'video') {
+        //     const subtitlePacket = _.cloneDeep(clonedPacket);
+        //
+        //     const subtitles = createSubtitlesMetadata('test subtitles');
+        //
+        //     subtitlePacket.header.prevPacketSize = clonedPacket.header.payloadSize;
+        //     subtitlePacket.header.packetType = 18;
+        //     subtitlePacket.header.payloadSize = subtitles.length;
+        //     subtitlePacket.payload = subtitles;
+        //
+        //     writePacket(subtitlePacket);
+        // }
 
         let writingEndTime = microseconds.now();
 
