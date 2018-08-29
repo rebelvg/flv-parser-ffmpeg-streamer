@@ -308,7 +308,7 @@ ffmpegSendProcess.stdin.on('close', function () {
 ffmpegSendProcess.stdin.on('error', function (err) {
     logger(['stdin error', err], true);
 
-    throw err;
+    process.exit(1);
 });
 
 ffmpegSendProcess.stdin.on('finish', function () {
