@@ -14,5 +14,6 @@
   "publishLinks": {
     "mpc": "-"
   },
-  "socketServer": "http://localhost:3000"
+  "socketServer": "http://localhost:3000",
+  "subtitlesFile": "C:\\video.srt"
 }

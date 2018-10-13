@@ -1,4 +1,5 @@
 const io = require('socket.io-client');
+
 const config = require('./config.json');
 
 const socket = io(config.socketServer);

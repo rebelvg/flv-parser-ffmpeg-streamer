@@ -15,6 +15,7 @@ const preparePaused = require('./prepare-paused');
 const sendRtmp = require('./send-rtmp');
 const logger = require('./logger');
 const publishSubtitles = require('./socket-publisher');
+const getSubtitle = require('./subtitles-parser');
 
 //const flvStream = fs.createReadStream('video.flv');
 
@@ -366,8 +367,12 @@ async function writeSequence() {
 
         writePacket(clonedPacket);
 
-        if (clonedPacket.header.packetType === 9) {
-            publishSubtitles(clonedPacket.header.timestampLower, 'test');
+        if (lastTimestampsIndex === 0 && clonedPacket.header.packetType === 9) {
+            const timestamp = clonedPacket.header.timestampLower;
+
+            const text = getSubtitle(packet.header.timestampLower);
+
+            publishSubtitles(timestamp, text);
         }
 
         // if (clonedPacket.getType() === 'video') {

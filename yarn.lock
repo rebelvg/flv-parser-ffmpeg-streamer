@@ -177,6 +177,12 @@ stream-parser@^0.3.1:
   dependencies:
     debug "2"
 
+subtitle@^2.0.0:
+  version "2.0.0"
+  resolved "https://registry.yarnpkg.com/subtitle/-/subtitle-2.0.0.tgz#e962f72f361ad32e34b393eac3db77278cb773ad"
+  dependencies:
+    zero-fill "^2.2.3"
+
 to-array@0.1.4:
   version "0.1.4"
   resolved "https://registry.yarnpkg.com/to-array/-/to-array-0.1.4.tgz#17e6c11f73dd4f3d74cda7a4ff3238e9ad9bf890"
@@ -200,3 +206,7 @@ xmlhttprequest-ssl@~1.5.4:
 yeast@0.1.2:
   version "0.1.2"
   resolved "https://registry.yarnpkg.com/yeast/-/yeast-0.1.2.tgz#008e06d8094320c372dbc2f8ed76a0ca6c8ac419"
+
+zero-fill@^2.2.3:
+  version "2.2.3"
+  resolved "https://registry.yarnpkg.com/zero-fill/-/zero-fill-2.2.3.tgz#a3def06ba5e39ae644850bb4ca2ad4112b4855e9"
