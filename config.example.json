@@ -13,5 +13,6 @@
   "publishLink": "mpc",
   "publishLinks": {
     "mpc": "-"
-  }
+  },
+  "socketServer": "http://localhost:3000"
 }
