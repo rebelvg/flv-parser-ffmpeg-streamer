@@ -13,7 +13,7 @@ export function logger(logs: any[], print: boolean = false) {
         } else {
             return log;
         }
-    }).join(' ');
+    }).join(os.EOL);
 
     if (print) {
         console.log(logsString);

@@ -1,3 +1,5 @@
+import { IMetaData, IAudioMetaData, IVideoMetaData, parseMetaData, parseAudio, parseVideo } from "../parse-data";
+
 export class FlvHeader {
     public signature: string;
     public version: number;
@@ -63,31 +65,56 @@ export class FlvPacketHeader {
     }
 }
 
+export enum PacketTypeEnum {
+    AUDIO = 'audio',
+    VIDEO = 'video',
+    METADATA = 'metadata',
+    UNKNWONN = 'unknown'
+}
+
 export class FlvPacket {
     public header: FlvPacketHeader;
     public payload: Buffer;
     public fullPacketSize: number;
 
+    public metaData: IMetaData;
+    public audioMetaData: IAudioMetaData;
+    public videoMetaData: IVideoMetaData;
+
+    public packetType: string;
+
     constructor(packetHeader: FlvPacketHeader, payload: Buffer) {
         this.header = packetHeader;
         this.payload = payload;
         this.fullPacketSize = 15 + packetHeader.payloadSize;
+
+        this.packetType = this.getType(payload);
     }
 
-    getType() {
+    private getType(payload: Buffer): string {
         switch (this.header.packetType) {
             case 8: {
-                return 'audio';
+                this.audioMetaData = parseAudio(payload);
+
+                return PacketTypeEnum.AUDIO;
             }
             case 9: {
-                return 'video';
+                this.videoMetaData = parseVideo(payload);
+
+                return PacketTypeEnum.VIDEO;
             }
             case 18: {
-                return 'metadata';
+                this.metaData = parseMetaData(payload);
+
+                return PacketTypeEnum.METADATA;
             }
             default: {
-                return 'unknown';
+                return PacketTypeEnum.UNKNWONN;
             }
         }
+    }
+
+    buildPacket(): Buffer {
+        return Buffer.concat([this.header.buildPacketHeader(), this.payload]);
     }
 }

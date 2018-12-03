@@ -1,4 +1,4 @@
-import { FlvHeader, FlvPacketHeader, FlvPacket } from "./flv/flv";
+import { FlvHeader, FlvPacketHeader, FlvPacket, PacketTypeEnum } from "./flv/flv";
 import { FlvStreamParser } from "./flv-stream";
 
 import * as fs from 'fs';
@@ -7,7 +7,6 @@ import * as ReadLine from 'readline';
 import * as microseconds from 'microseconds';
 
 import { config } from '../config';
-import { parseMetadata, parseAudio, parseVideo, createSubtitlesMetadata } from './parse-data';
 import { ffmpegPipe } from './ffmpeg-pipe';
 import { preparePaused } from './prepare-paused';
 import { sendRtmp } from './send-rtmp';
@@ -35,7 +34,7 @@ flvStream2.pipe(flvStreamParser2);
 let mainHeader: FlvHeader = null;
 
 flvStreamParser.on('flv-header', (header: FlvHeader) => {
-    logger([header], true);
+    logger(['flv-header', header], true);
 
     mainHeader = header;
 });
@@ -47,26 +46,20 @@ let firstVideoPacket: FlvPacket = null;
 flvStreamParser.on('flv-packet', (flvPacket: FlvPacket) => {
     savePacket(flvPacket);
 
-    if (!firstMetaDataPacket && flvPacket.header.packetType === 18) {
-        const metadata = parseMetadata(flvPacket.payload);
-
-        logger(['flvStreamParser', metadata], true);
+    if (!firstMetaDataPacket && flvPacket.packetType === PacketTypeEnum.METADATA) {
+        logger(['flvStreamParser', flvPacket.metaData], true);
 
         firstMetaDataPacket = flvPacket;
     }
 
-    if (!firstAudioPacket && flvPacket.header.packetType === 8) {
-        const audioData = parseAudio(flvPacket.payload);
-
-        logger(['flvStreamParser', audioData], true);
+    if (!firstAudioPacket && flvPacket.packetType === PacketTypeEnum.AUDIO) {
+        logger(['flvStreamParser', flvPacket.audioMetaData], true);
 
         firstAudioPacket = flvPacket;
     }
 
-    if (!firstVideoPacket && flvPacket.header.packetType === 9) {
-        const videoData = parseVideo(flvPacket.payload);
-
-        logger(['flvStreamParser', videoData], true);
+    if (!firstVideoPacket && flvPacket.packetType === PacketTypeEnum.VIDEO) {
+        logger(['flvStreamParser', flvPacket.videoMetaData], true);
 
         firstVideoPacket = flvPacket;
     }
@@ -80,22 +73,16 @@ let flvStreamParserPacketCount: number = 0;
 flvStreamParser2.on('flv-packet', (flvPacket: FlvPacket) => {
     flvStreamParserPacketCount++;
 
-    if (flvPacket.header.timestampLower === 0 && flvPacket.header.packetType === 18) {
-        const metadata = parseMetadata(flvPacket.payload);
-
-        logger(['flvStreamParser2', metadata], true);
+    if (flvPacket.header.timestampLower === 0 && flvPacket.packetType === PacketTypeEnum.METADATA) {
+        logger(['flvStreamParser2', flvPacket.metaData], true);
     }
 
-    if (flvPacket.header.timestampLower === 0 && flvPacket.header.packetType === 8) {
-        const audioData = parseAudio(flvPacket.payload);
-
-        logger(['flvStreamParser2', audioData], true);
+    if (flvPacket.header.timestampLower === 0 && flvPacket.packetType === PacketTypeEnum.AUDIO) {
+        logger(['flvStreamParser2', flvPacket.audioMetaData], true);
     }
 
-    if (flvPacket.header.timestampLower === 0 && flvPacket.header.packetType === 9) {
-        const videoData = parseVideo(flvPacket.payload);
-
-        logger(['flvStreamParser2', videoData], true);
+    if (flvPacket.header.timestampLower === 0 && flvPacket.packetType === PacketTypeEnum.VIDEO) {
+        logger(['flvStreamParser2', flvPacket.videoMetaData], true);
     }
 
     if ([1, 2, 3].includes(flvStreamParserPacketCount)) return;
@@ -131,9 +118,7 @@ function writePacket(flvPacket: FlvPacket) {
         flvPacket.header.prevPacketSize = 11 + prevPacket.header.payloadSize;
     }
 
-    const buffer = Buffer.concat([flvPacket.header.buildPacketHeader(), flvPacket.payload]);
-
-    isDrained = ffmpegSendProcess.stdin.write(buffer);
+    isDrained = ffmpegSendProcess.stdin.write(flvPacket.buildPacket());
 
     prevPacket = flvPacket;
 }
@@ -141,7 +126,7 @@ function writePacket(flvPacket: FlvPacket) {
 const savedPackets: FlvPacket[] = [];
 
 function savePacket(flvPacket: FlvPacket) {
-    let lastPacket = _.last(savedPackets);
+    const lastPacket = _.last(savedPackets);
 
     if (lastPacket) {
         if (flvPacket.header.timestampLower >= lastPacket.header.timestampLower) {
@@ -175,7 +160,7 @@ interface ILastTimestamps {
     [index: number]: ICursor
 }
 
-let lastTimestamps: ILastTimestamps = {
+const lastTimestamps: ILastTimestamps = {
     0: {
         lastTimestamp: 0,
         savedPackets
@@ -189,7 +174,7 @@ let lastTimestamps: ILastTimestamps = {
 let lastSwitchedTimestamp: number = 0;
 let lastPacketTimestamp: number = 0;
 
-let ffmpegSendProcess = sendRtmp();
+const ffmpegSendProcess = sendRtmp();
 
 ffmpegSendProcess.stdin.on('close', () => {
     logger(['stdin close'], true);
@@ -286,7 +271,7 @@ async function writeSequence() {
             //console.log('not drained, have to wait before writing...');
 
             // await new Promise(resolve => {
-            //     ffmpegSendProcess.stdin.once('drain', function () {
+            //     ffmpegSendProcess.stdin.once('drain', () => {
             //         //console.log('stdin drain once');
             //
             //         resolve();

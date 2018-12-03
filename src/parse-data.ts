@@ -30,7 +30,7 @@ const TYPES = {
     }
 };
 
-export function createSubtitlesMetadata(subtitles: string): Buffer {
+export function createSubtitlesMetaData(subtitles: string): Buffer {
     const subtitlesMetadata = Buffer.alloc(34 + subtitles.length);
 
     subtitlesMetadata.writeInt8(2, 0);
@@ -48,11 +48,11 @@ export function createSubtitlesMetadata(subtitles: string): Buffer {
     return subtitlesMetadata;
 }
 
-export interface IMetadata {
+export interface IMetaData {
     [paramName: string]: number | string | boolean;
 }
 
-export function parseMetadata(payload: Buffer): IMetadata {
+export function parseMetaData(payload: Buffer): IMetaData {
     if (payload.readUInt8(0) !== 2) throw new Error('Unknown metadata format.');
 
     const stringLength = payload.readUIntBE(1, 2);
@@ -60,6 +60,8 @@ export function parseMetadata(payload: Buffer): IMetadata {
     let parseOffset = 3;
 
     const metadataName = payload.toString('utf8', parseOffset, parseOffset + stringLength);
+
+    console.log(metadataName);
 
     parseOffset += stringLength;
 
@@ -85,7 +87,7 @@ export function parseMetadata(payload: Buffer): IMetadata {
         }
     }
 
-    const params: IMetadata = {};
+    const params: IMetaData = {};
 
     while (true) {
         if (parseOffset >= payload.length - 2) break;
@@ -141,7 +143,14 @@ export function parseMetadata(payload: Buffer): IMetadata {
     return params;
 }
 
-export function parseAudio(payload: Buffer) {
+export interface IAudioMetaData {
+    soundFormat: string;
+    soundRate: number;
+    soundSize: number;
+    channels: number;
+}
+
+export function parseAudio(payload: Buffer): IAudioMetaData {
     const soundFormatBit: number = bitwise.readUInt(payload, 0, 4);
     const soundRateBit: number = bitwise.readUInt(payload, 4, 2);
     const soundSizeBit: number = bitwise.readUInt(payload, 6, 1);
@@ -150,22 +159,27 @@ export function parseAudio(payload: Buffer) {
     const soundFormat = _.get(TYPES, ['audio', 'soundFormat', soundFormatBit]);
     const soundRate = _.get(TYPES, ['audio', 'soundRate', soundRateBit]);
     const soundSize = _.get(TYPES, ['audio', 'soundSize', soundSizeBit]);
-    const soundType = _.get(TYPES, ['audio', 'soundType', soundTypeBit]);
+    const channels = _.get(TYPES, ['audio', 'soundType', soundTypeBit]);
 
     if (!soundFormat) throw new Error('Unknown sound format. ' + soundFormatBit);
     if (!soundRate) throw new Error('Unknown sound rate. ' + soundRateBit);
     if (!soundSize) throw new Error('Unknown sound size. ' + soundSizeBit);
-    if (!soundType) throw new Error('Unknown sound type. ' + soundTypeBit);
+    if (!channels) throw new Error('Unknown sound type. ' + soundTypeBit);
 
     return {
-        soundFormat: soundFormat,
-        soundRate: soundRate,
-        soundSize: soundSize,
-        channels: soundType
+        soundFormat,
+        soundRate,
+        soundSize,
+        channels
     };
 }
 
-export function parseVideo(payload: Buffer) {
+export interface IVideoMetaData {
+    frameType: string;
+    codecId: string;
+}
+
+export function parseVideo(payload: Buffer): IVideoMetaData {
     let frameTypeBit: number = bitwise.readUInt(payload, 0, 4);
     let codecIdBit: number = bitwise.readUInt(payload, 4, 4);
 
@@ -176,7 +190,7 @@ export function parseVideo(payload: Buffer) {
     if (!codecId) throw new Error('Unknown codec id. ' + codecIdBit);
 
     return {
-        frameType: frameType,
-        codecId: codecId
+        frameType,
+        codecId
     };
 }
