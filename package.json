@@ -11,5 +11,9 @@
     "socket.io-client": "^2.1.1",
     "stream-parser": "^0.3.1",
     "subtitle": "^2.0.0"
+  },
+  "devDependencies": {
+    "ts-node": "^7.0.1",
+    "typescript": "^3.2.1"
   }
 }
