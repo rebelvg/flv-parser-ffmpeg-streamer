@@ -80,7 +80,7 @@ const savedPackets2Copy: FlvPacket[] = [];
 
 let flvStreamParserPacketCount: number = 0;
 
-flvStreamParser2.on('flv-packet', (flvPacket) => {
+flvStreamParser2.on('flv-packet', (flvPacket: FlvPacket) => {
     flvStreamParserPacketCount++;
 
     if (flvPacket.header.timestampLower === 0 && flvPacket.header.packetType === 18) {
