@@ -7,13 +7,13 @@ import * as ReadLine from 'readline';
 import * as microseconds from 'microseconds';
 
 import {config} from './config';
-import { parseMetadata, parseAudio, parseVideo, createSubtitlesMetadata } from './modules/parse-data'
+import { parseMetadata, parseAudio, parseVideo, createSubtitlesMetadata } from './modules/parse-data';
 import { ffmpegPipe } from './ffmpeg-pipe';
 import { preparePaused } from './prepare-paused';
 import { sendRtmp } from './send-rtmp';
 const logger = require('./logger');
-const {publishFlv, publishSubtitles} = require('./socket-publisher');
-const getSubtitle = require('./subtitles-parser');
+import { publishFlv, publishSubtitles} from './socket-publisher';
+import { getSubtitle } from './subtitles-parser';
 
 //const flvStream = fs.createReadStream('video.flv');
 

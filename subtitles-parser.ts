@@ -1,8 +1,8 @@
-const Subtitles = require('subtitle');
-const fs = require('fs');
-const _ = require('lodash');
+import * as fs from 'fs';
+import * as _ from 'lodash';
+import * as Subtitles from 'subtitle';
 
-const config = require('./config.json');
+import { config } from './config';
 
 const subtitlesFile = fs.readFileSync(config.subtitlesFile, {
     encoding: 'utf-8'
@@ -10,7 +10,7 @@ const subtitlesFile = fs.readFileSync(config.subtitlesFile, {
 
 const subtitles = Subtitles.parse(subtitlesFile);
 
-function getSubtitle(timestamp) {
+export function getSubtitle(timestamp: number): string {
     const videoStart = config.videoStart.split(':');
 
     timestamp =+ timestamp + (parseInt(videoStart[0]) * 60 * 60 * 1000) + (parseInt(videoStart[1]) * 60 * 1000) + (parseInt(videoStart[2]) * 1000);
@@ -25,5 +25,3 @@ function getSubtitle(timestamp) {
 
     return subtitle.text;
 }
-
-module.exports = getSubtitle;
