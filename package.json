@@ -3,6 +3,9 @@
   "version": "1.0.0",
   "main": "parse-stream.js",
   "license": "MIT",
+  "scripts": {
+    "stream": "ts-node src/parse-stream"
+  },
   "dependencies": {
     "bitwise": "^0.2.0",
     "lodash": "^4.17.4",
