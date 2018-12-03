@@ -14,7 +14,7 @@ const ffmpegPipe = require('./ffmpeg-pipe');
 const preparePaused = require('./prepare-paused');
 const sendRtmp = require('./send-rtmp');
 const logger = require('./logger');
-const publishSubtitles = require('./socket-publisher');
+const {publishFlv, publishSubtitles} = require('./socket-publisher');
 const getSubtitle = require('./subtitles-parser');
 
 //const flvStream = fs.createReadStream('video.flv');
@@ -251,7 +251,11 @@ function writePacket(flvPacket) {
         flvPacket.header.prevPacketSize = 11 + prevPacket.header.payloadSize;
     }
 
-    isDrained = ffmpegSendProcess.stdin.write(Buffer.concat([flvPacket.header.buildPacketHeader(), flvPacket.payload]));
+    const buffer = Buffer.concat([flvPacket.header.buildPacketHeader(), flvPacket.payload]);
+
+    isDrained = ffmpegSendProcess.stdin.write(buffer);
+
+    publishFlv(buffer);
 
     prevPacket = flvPacket;
 }
@@ -338,7 +342,11 @@ async function writeSequence() {
 
     let startTime = Date.now();
 
-    ffmpegSendProcess.stdin.write(mainHeader.buildHeader());
+    const buffer = mainHeader.buildHeader();
+
+    ffmpegSendProcess.stdin.write(buffer);
+
+    publishFlv(buffer);
 
     let drainingWaitingTime = 0;
 

@@ -11,4 +11,11 @@ function publishSubtitles(timestamp, text) {
     });
 }
 
-module.exports = publishSubtitles;
+function publishFlv(flvPacket) {
+    socket.emit('flv_packet', {
+        flvPacket
+    });
+}
+
+module.exports.publishSubtitles = publishSubtitles;
+module.exports.publishFlv = publishFlv;
