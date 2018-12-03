@@ -1,14 +1,13 @@
-const childProcess = require('child_process');
-const fs = require('fs');
-const _ = require('lodash');
-const os = require('os');
+import * as fs from 'fs';
+import * as _ from 'lodash';
+import * as os from 'os';
+import * as childProcess from 'child_process';
 
-const config = require('./config.json');
-const ffmpegPath = require('./config.json').ffmpegPath;
+import {config} from './config';
 const logger = require('./logger');
 
-function pipe() {
-    let ffmpegParams;
+function pipe(): childProcess.ChildProcess {
+    let ffmpegParams: string[];
 
     if (config.copyVideo) {
         ffmpegParams = [
@@ -36,7 +35,7 @@ function pipe() {
             '-vcodec', 'libx264',
             '-vf', `crop=iw:ih-${config.cropHeight * 2}:0:${config.cropHeight}, scale=${config.scaleWidth}:-2`,
             '-tune', 'grain',
-            '-b:v', config.videoBitrate,
+            '-b:v', `${config.videoBitrate}k`,
             '-profile:v', 'high',
             '-acodec', 'aac',
             '-ac', '2',
@@ -47,7 +46,7 @@ function pipe() {
         ];
     }
 
-    const ffmpegProcess = childProcess.spawn(ffmpegPath, ffmpegParams, {
+    const ffmpegProcess = childProcess.spawn(config.ffmpegPath, ffmpegParams, {
         stdio: 'pipe'
     });
 

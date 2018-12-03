@@ -7,7 +7,7 @@ import * as ReadLine from 'readline';
 import * as microseconds from 'microseconds';
 
 const config = require('./config.json');
-const {parseMetadata, parseAudio, parseVideo, createSubtitlesMetadata} = require('./modules/parse-data');
+import { parseMetadata, parseAudio, parseVideo, createSubtitlesMetadata } from './modules/parse-data'
 const ffmpegPipe = require('./ffmpeg-pipe');
 const preparePaused = require('./prepare-paused');
 const sendRtmp = require('./send-rtmp');

@@ -1,6 +1,5 @@
-const fs = require('fs');
-const _ = require('lodash');
-const bitwise = require('bitwise');
+import * as _ from 'lodash';
+import * as bitwise from 'bitwise';
 
 const TYPES = {
     audio: {
@@ -31,7 +30,7 @@ const TYPES = {
     }
 };
 
-function createSubtitlesMetadata(subtitles) {
+export function createSubtitlesMetadata(subtitles: string): Buffer {
     const subtitlesMetadata = Buffer.alloc(34 + subtitles.length);
 
     subtitlesMetadata.writeInt8(2, 0);
@@ -49,14 +48,18 @@ function createSubtitlesMetadata(subtitles) {
     return subtitlesMetadata;
 }
 
-function parseMetadata(payload) {
+export interface IMetadata {
+    [paramName: string]: number | string | boolean;
+}
+
+export function parseMetadata(payload: Buffer): IMetadata {
     if (payload.readUInt8(0) !== 2) throw new Error('Unknown metadata format.');
 
-    let stringLength = payload.readUIntBE(1, 2);
+    const stringLength = payload.readUIntBE(1, 2);
 
     let parseOffset = 3;
 
-    let metadataName = payload.toString('utf8', parseOffset, parseOffset + stringLength);
+    const metadataName = payload.toString('utf8', parseOffset, parseOffset + stringLength);
 
     parseOffset += stringLength;
 
@@ -74,7 +77,7 @@ function parseMetadata(payload) {
         }
         case 8: {
             //number of items in metadata hash-map
-            let metadataLength = payload.readUInt32BE(parseOffset);
+            const metadataLength = payload.readUInt32BE(parseOffset);
 
             parseOffset += 5;
 
@@ -82,20 +85,20 @@ function parseMetadata(payload) {
         }
     }
 
-    let params = {};
+    const params: IMetadata = {};
 
     while (true) {
         if (parseOffset >= payload.length - 2) break;
 
-        let paramNameLength = payload.readUInt8(parseOffset);
+        const paramNameLength = payload.readUInt8(parseOffset);
 
         parseOffset++;
 
-        let paramName = payload.toString('utf8', parseOffset, parseOffset + paramNameLength);
+        const paramName = payload.toString('utf8', parseOffset, parseOffset + paramNameLength);
 
         parseOffset += paramNameLength;
 
-        let valueType = payload.readUInt8(parseOffset);
+        const valueType = payload.readUInt8(parseOffset);
 
         parseOffset++;
 
@@ -138,16 +141,16 @@ function parseMetadata(payload) {
     return params;
 }
 
-function parseAudio(payload) {
-    let soundFormatBit = bitwise.readUInt(payload, 0, 4);
-    let soundRateBit = bitwise.readUInt(payload, 4, 2);
-    let soundSizeBit = bitwise.readUInt(payload, 6, 1);
-    let soundTypeBit = bitwise.readUInt(payload, 7, 1);
+export function parseAudio(payload: Buffer) {
+    const soundFormatBit: number = bitwise.readUInt(payload, 0, 4);
+    const soundRateBit: number = bitwise.readUInt(payload, 4, 2);
+    const soundSizeBit: number = bitwise.readUInt(payload, 6, 1);
+    const soundTypeBit: number = bitwise.readUInt(payload, 7, 1);
 
-    let soundFormat = _.get(TYPES, ['audio', 'soundFormat', soundFormatBit]);
-    let soundRate = _.get(TYPES, ['audio', 'soundRate', soundRateBit]);
-    let soundSize = _.get(TYPES, ['audio', 'soundSize', soundSizeBit]);
-    let soundType = _.get(TYPES, ['audio', 'soundType', soundTypeBit]);
+    const soundFormat = _.get(TYPES, ['audio', 'soundFormat', soundFormatBit]);
+    const soundRate = _.get(TYPES, ['audio', 'soundRate', soundRateBit]);
+    const soundSize = _.get(TYPES, ['audio', 'soundSize', soundSizeBit]);
+    const soundType = _.get(TYPES, ['audio', 'soundType', soundTypeBit]);
 
     if (!soundFormat) throw new Error('Unknown sound format. ' + soundFormatBit);
     if (!soundRate) throw new Error('Unknown sound rate. ' + soundRateBit);
@@ -162,9 +165,9 @@ function parseAudio(payload) {
     };
 }
 
-function parseVideo(payload) {
-    let frameTypeBit = bitwise.readUInt(payload, 0, 4);
-    let codecIdBit = bitwise.readUInt(payload, 4, 4);
+export function parseVideo(payload: Buffer) {
+    let frameTypeBit: number = bitwise.readUInt(payload, 0, 4);
+    let codecIdBit: number = bitwise.readUInt(payload, 4, 4);
 
     let frameType = _.get(TYPES, ['video', 'frameType', frameTypeBit]);
     let codecId = _.get(TYPES, ['video', 'codecId', codecIdBit]);
