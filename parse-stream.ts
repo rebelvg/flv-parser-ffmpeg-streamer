@@ -1,13 +1,10 @@
 import { FlvHeader, FlvPacketHeader, FlvPacket } from "./flv/flv";
 import { FlvStreamParser } from "./flv-stream";
 
-const fs = require('fs');
+import * as fs from 'fs';
 import * as _ from 'lodash';
-const childProcess = require('child_process');
-const ReadLine = require('readline');
-const microseconds = require('microseconds');
-const NanoTimer = require('nanotimer');
-const os = require('os');
+import * as ReadLine from 'readline';
+import * as microseconds from 'microseconds';
 
 const config = require('./config.json');
 const {parseMetadata, parseAudio, parseVideo, createSubtitlesMetadata} = require('./modules/parse-data');
@@ -371,7 +368,7 @@ const readLine = ReadLine.createInterface({
 
 let streamingEncode: boolean = true;
 
-readLine.on('line', function (line) {
+readLine.on('line', (line) => {
     if (line === 's') {
         switchVideoRequest();
     }
