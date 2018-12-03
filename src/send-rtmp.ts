@@ -2,9 +2,9 @@ import * as fs from 'fs';
 import * as _ from 'lodash';
 import * as childProcess from 'child_process';
 
-import { config } from './config';
+import { config } from '../config';
 
-const logger = require('./logger');
+import { logger } from './logger';
 
 export function sendRtmp(): childProcess.ChildProcess {
     const publishLink = _.get(config.publishLinks, [config.publishLink], '-');
@@ -19,8 +19,8 @@ export function sendRtmp(): childProcess.ChildProcess {
         '-f', 'flv',
         publishLink
     ], {
-        stdio: 'pipe'
-    });
+            stdio: 'pipe'
+        });
 
     // const outputVideo = fs.createWriteStream('output.flv');
     // ffmpegProcess.stdout.pipe(outputVideo);
@@ -33,8 +33,8 @@ export function sendRtmp(): childProcess.ChildProcess {
         const mpcProcess = childProcess.spawn(config.mpcPath, [
             'playpath', '-'
         ], {
-            stdio: 'pipe'
-        });
+                stdio: 'pipe'
+            });
 
         ffmpegProcess.stdout.pipe(mpcProcess.stdin);
     }

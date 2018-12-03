@@ -2,9 +2,9 @@ import * as fs from 'fs';
 import * as _ from 'lodash';
 import * as childProcess from 'child_process';
 
-import {config} from './config';
+import { config } from '../config';
 
-const logger = require('./logger');
+import { logger } from './logger';
 
 export function ffmpegPipe(): childProcess.ChildProcess {
     let ffmpegParams: string[];

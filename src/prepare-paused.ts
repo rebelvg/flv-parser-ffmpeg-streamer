@@ -2,7 +2,7 @@ import * as fs from 'fs';
 import * as _ from 'lodash';
 import * as childProcess from 'child_process';
 
-import { config } from './config';
+import { config } from '../config';
 import { Readable } from 'stream';
 
 export function preparePaused(): Readable {
@@ -27,8 +27,8 @@ export function preparePaused(): Readable {
             '-f', 'flv',
             '-'
         ], {
-            stdio: 'pipe'
-        });
+                stdio: 'pipe'
+            });
     } else {
         ffmpegProcessVideo = childProcess.spawn(config.ffmpegPath, [
             '-i', config.videoFile,
@@ -38,8 +38,8 @@ export function preparePaused(): Readable {
             '-f', 'flv',
             '-',
         ], {
-            stdio: 'pipe'
-        });
+                stdio: 'pipe'
+            });
     }
 
     const ffmpegProcessAudio = childProcess.spawn(config.ffmpegPath, [
@@ -55,8 +55,8 @@ export function preparePaused(): Readable {
         '-f', 'flv',
         '-'
     ], {
-        stdio: 'pipe'
-    });
+            stdio: 'pipe'
+        });
 
     // ffmpegProcessVideo.stderr.pipe(process.stdout);
     // ffmpegProcessAudio.stderr.pipe(process.stdout);

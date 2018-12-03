@@ -180,8 +180,3 @@ export function parseVideo(payload: Buffer) {
         codecId: codecId
     };
 }
-
-exports.parseMetadata = parseMetadata;
-exports.parseAudio = parseAudio;
-exports.parseVideo = parseVideo;
-exports.createSubtitlesMetadata = createSubtitlesMetadata;

@@ -6,13 +6,13 @@ import * as _ from 'lodash';
 import * as ReadLine from 'readline';
 import * as microseconds from 'microseconds';
 
-import {config} from './config';
-import { parseMetadata, parseAudio, parseVideo, createSubtitlesMetadata } from './modules/parse-data';
+import { config } from '../config';
+import { parseMetadata, parseAudio, parseVideo, createSubtitlesMetadata } from './parse-data';
 import { ffmpegPipe } from './ffmpeg-pipe';
 import { preparePaused } from './prepare-paused';
 import { sendRtmp } from './send-rtmp';
-const logger = require('./logger');
-import { publishFlv, publishSubtitles} from './socket-publisher';
+import { logger } from './logger';
+import { publishFlv, publishSubtitles } from './socket-publisher';
 import { getSubtitle } from './subtitles-parser';
 
 //const flvStream = fs.createReadStream('video.flv');
