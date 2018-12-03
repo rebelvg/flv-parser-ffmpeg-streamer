@@ -3,6 +3,7 @@ import * as _ from 'lodash';
 import * as childProcess from 'child_process';
 
 import { config } from '../config';
+
 import { Readable } from 'stream';
 
 export function preparePaused(): Readable {
@@ -17,10 +18,10 @@ export function preparePaused(): Readable {
             '-vf', `scale=${config.scaleWidth}:-2`,
             '-preset', config.preset,
             '-c:v', 'libx264',
-            '-b:v', `${config.videoBitrate}`,
-            '-minrate', `${config.videoBitrate}`,
-            '-maxrate', `${config.videoBitrate}`,
-            '-bufsize', `${config.videoBitrate}`,
+            '-b:v', `${config.videoBitrate}k`,
+            '-minrate', `${config.videoBitrate}k`,
+            '-maxrate', `${config.videoBitrate}k`,
+            '-bufsize', `${config.videoBitrate}k`,
             '-x264-params', 'nal-hrd=cbr',
             '-profile:v', 'high',
             '-pix_fmt', 'yuv420p',
@@ -28,7 +29,8 @@ export function preparePaused(): Readable {
             '-'
         ], {
                 stdio: 'pipe'
-            });
+            }
+        );
     } else {
         ffmpegProcessVideo = childProcess.spawn(config.ffmpegPath, [
             '-i', config.videoFile,
@@ -39,7 +41,8 @@ export function preparePaused(): Readable {
             '-',
         ], {
                 stdio: 'pipe'
-            });
+            }
+        );
     }
 
     const ffmpegProcessAudio = childProcess.spawn(config.ffmpegPath, [
@@ -56,7 +59,8 @@ export function preparePaused(): Readable {
         '-'
     ], {
             stdio: 'pipe'
-        });
+        }
+    );
 
     // ffmpegProcessVideo.stderr.pipe(process.stdout);
     // ffmpegProcessAudio.stderr.pipe(process.stdout);

@@ -5,8 +5,9 @@ import * as childProcess from 'child_process';
 import { config } from '../config';
 
 import { logger } from './logger';
+import { Readable } from 'stream';
 
-export function ffmpegPipe(): childProcess.ChildProcess {
+export function pipeMainFile(): Readable {
     let ffmpegParams: string[];
 
     if (config.copyVideo) {
@@ -50,7 +51,7 @@ export function ffmpegPipe(): childProcess.ChildProcess {
         stdio: 'pipe'
     });
 
-    //let fileReadStream = fs.createReadStream(fileReadPath);
+    //const fileReadStream = fs.createReadStream(fileReadPath);
     //fileReadStream.pipe(ffmpegProcess.stdin);
 
     const encodedVideo = fs.createWriteStream('encoded.flv');
@@ -59,9 +60,9 @@ export function ffmpegPipe(): childProcess.ChildProcess {
 
     ffmpegProcess.stderr.setEncoding('utf8');
 
-    ffmpegProcess.stderr.on('data', (data) => {
+    ffmpegProcess.stderr.on('data', (data: string) => {
         logger(['ffmpeg-pipe', data]);
     });
 
-    return ffmpegProcess;
+    return ffmpegProcess.stdout;
 }

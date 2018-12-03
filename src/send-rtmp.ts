@@ -6,7 +6,9 @@ import { config } from '../config';
 
 import { logger } from './logger';
 
-export function sendRtmp(): childProcess.ChildProcess {
+import { Writable } from 'stream';
+
+export function sendRtmp(): Writable {
     const publishLink = _.get(config.publishLinks, [config.publishLink], '-');
 
     const ffmpegProcess = childProcess.spawn(config.ffmpegPath, [
@@ -20,7 +22,8 @@ export function sendRtmp(): childProcess.ChildProcess {
         publishLink
     ], {
             stdio: 'pipe'
-        });
+        }
+    );
 
     // const outputVideo = fs.createWriteStream('output.flv');
     // ffmpegProcess.stdout.pipe(outputVideo);
@@ -30,11 +33,7 @@ export function sendRtmp(): childProcess.ChildProcess {
     // };
 
     if (publishLink === '-') {
-        const mpcProcess = childProcess.spawn(config.mpcPath, [
-            'playpath', '-'
-        ], {
-                stdio: 'pipe'
-            });
+        const mpcProcess = childProcess.spawn(config.mpcPath, ['playpath', '-'], { stdio: 'pipe' });
 
         ffmpegProcess.stdout.pipe(mpcProcess.stdin);
     }
@@ -45,5 +44,23 @@ export function sendRtmp(): childProcess.ChildProcess {
         logger(['send-rtmp', data]);
     });
 
-    return ffmpegProcess;
+    ffmpegProcess.stdin.on('close', () => {
+        logger(['stdin close'], true);
+    });
+
+    ffmpegProcess.stdin.on('error', (err: Error) => {
+        logger(['stdin error', err], true);
+
+        process.exit(1);
+    });
+
+    ffmpegProcess.stdin.on('finish', () => {
+        logger(['stdin finish'], true);
+    });
+
+    ffmpegProcess.stdin.on('drain', () => {
+        //console.log('stdin drain');
+    });
+
+    return ffmpegProcess.stdin;
 }
