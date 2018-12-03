@@ -1,6 +1,8 @@
 /.vscode
 /.idea
 /node_modules
+/logs
 *log
+config.json
 config.ts
 *.flv
