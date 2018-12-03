@@ -1,26 +1,26 @@
-const childProcess = require('child_process');
-const fs = require('fs');
-const _ = require('lodash');
+import * as fs from 'fs';
+import * as _ from 'lodash';
+import * as childProcess from 'child_process';
 
-const config = require('./config.json');
-const ffmpegPath = require('./config.json').ffmpegPath;
+import { config } from './config';
+import { Readable } from 'stream';
 
-function preparePaused() {
-    let ffmpegProcessVideo;
+export function preparePaused(): Readable {
+    let ffmpegProcessVideo: childProcess.ChildProcess;
 
     if (!config.copyVideo) {
-        ffmpegProcessVideo = childProcess.spawn(ffmpegPath, [
+        ffmpegProcessVideo = childProcess.spawn(config.ffmpegPath, [
             '-loop', '1',
             '-i', config.pausedImg,
             '-t', '10',
-            '-r', config.framerate,
+            '-r', `${config.framerate}`,
             '-vf', `scale=${config.scaleWidth}:-2`,
             '-preset', config.preset,
             '-c:v', 'libx264',
-            '-b:v', config.videoBitrate,
-            '-minrate', config.videoBitrate,
-            '-maxrate', config.videoBitrate,
-            '-bufsize', config.videoBitrate,
+            '-b:v', `${config.videoBitrate}`,
+            '-minrate', `${config.videoBitrate}`,
+            '-maxrate', `${config.videoBitrate}`,
+            '-bufsize', `${config.videoBitrate}`,
             '-x264-params', 'nal-hrd=cbr',
             '-profile:v', 'high',
             '-pix_fmt', 'yuv420p',
@@ -30,7 +30,7 @@ function preparePaused() {
             stdio: 'pipe'
         });
     } else {
-        ffmpegProcessVideo = childProcess.spawn(ffmpegPath, [
+        ffmpegProcessVideo = childProcess.spawn(config.ffmpegPath, [
             '-i', config.videoFile,
             '-t', '0.3',
             '-vcodec', 'copy',
@@ -42,7 +42,7 @@ function preparePaused() {
         });
     }
 
-    const ffmpegProcessAudio = childProcess.spawn(ffmpegPath, [
+    const ffmpegProcessAudio = childProcess.spawn(config.ffmpegPath, [
         '-f', 'lavfi',
         '-i', 'anullsrc=r=48000',
         '-i', '-',
@@ -63,10 +63,9 @@ function preparePaused() {
 
     ffmpegProcessVideo.stdout.pipe(ffmpegProcessAudio.stdin);
 
-    let pausedVideo = fs.createWriteStream('paused.flv');
+    const pausedVideo = fs.createWriteStream('paused.flv');
+
     ffmpegProcessAudio.stdout.pipe(pausedVideo);
 
     return ffmpegProcessAudio.stdout;
 }
-
-module.exports = preparePaused;

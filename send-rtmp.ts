@@ -1,17 +1,15 @@
-const childProcess = require('child_process');
-const fs = require('fs');
-const _ = require('lodash');
-const os = require('os');
+import * as fs from 'fs';
+import * as _ from 'lodash';
+import * as childProcess from 'child_process';
 
-const config = require('./config.json');
-const ffmpegPath = require('./config.json').ffmpegPath;
-const mpcPath = require('./config.json').mpcPath;
+import { config } from './config';
+
 const logger = require('./logger');
 
-function send() {
-    let publishLink = _.get(config.publishLinks, [config.publishLink], '-');
+export function sendRtmp(): childProcess.ChildProcess {
+    const publishLink = _.get(config.publishLinks, [config.publishLink], '-');
 
-    const ffmpegProcess = childProcess.spawn(ffmpegPath, [
+    const ffmpegProcess = childProcess.spawn(config.ffmpegPath, [
         //'-re',
         //'-nostats',
         '-i', '-',
@@ -32,7 +30,7 @@ function send() {
     // };
 
     if (publishLink === '-') {
-        const mpcProcess = childProcess.spawn(mpcPath, [
+        const mpcProcess = childProcess.spawn(config.mpcPath, [
             'playpath', '-'
         ], {
             stdio: 'pipe'
@@ -43,11 +41,9 @@ function send() {
 
     ffmpegProcess.stderr.setEncoding('utf8');
 
-    ffmpegProcess.stderr.on('data', function (data) {
+    ffmpegProcess.stderr.on('data', (data) => {
         logger(['send-rtmp', data]);
     });
 
     return ffmpegProcess;
 }
-
-module.exports = send;

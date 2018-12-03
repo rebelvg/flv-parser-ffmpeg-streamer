@@ -6,11 +6,11 @@ import * as _ from 'lodash';
 import * as ReadLine from 'readline';
 import * as microseconds from 'microseconds';
 
-const config = require('./config.json');
+import {config} from './config';
 import { parseMetadata, parseAudio, parseVideo, createSubtitlesMetadata } from './modules/parse-data'
-const ffmpegPipe = require('./ffmpeg-pipe');
-const preparePaused = require('./prepare-paused');
-const sendRtmp = require('./send-rtmp');
+import { ffmpegPipe } from './ffmpeg-pipe';
+import { preparePaused } from './prepare-paused';
+import { sendRtmp } from './send-rtmp';
 const logger = require('./logger');
 const {publishFlv, publishSubtitles} = require('./socket-publisher');
 const getSubtitle = require('./subtitles-parser');
@@ -387,7 +387,7 @@ function switchVideoRequested() {
 
     streamingEncode = !streamingEncode;
 
-    lastSwitchedTimestamp = lastTimestamp - Math.ceil(1000 / _.toNumber(config.framerate));
+    lastSwitchedTimestamp = lastTimestamp - Math.ceil(1000 / config.framerate);
 
     lastTimestamps[lastTimestampsIndex].lastTimestamp = lastPacketTimestamp;
 

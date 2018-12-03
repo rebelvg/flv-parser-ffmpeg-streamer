@@ -1,12 +1,12 @@
 import * as fs from 'fs';
 import * as _ from 'lodash';
-import * as os from 'os';
 import * as childProcess from 'child_process';
 
 import {config} from './config';
+
 const logger = require('./logger');
 
-function pipe(): childProcess.ChildProcess {
+export function ffmpegPipe(): childProcess.ChildProcess {
     let ffmpegParams: string[];
 
     if (config.copyVideo) {
@@ -54,15 +54,14 @@ function pipe(): childProcess.ChildProcess {
     //fileReadStream.pipe(ffmpegProcess.stdin);
 
     const encodedVideo = fs.createWriteStream('encoded.flv');
+
     ffmpegProcess.stdout.pipe(encodedVideo);
 
     ffmpegProcess.stderr.setEncoding('utf8');
 
-    ffmpegProcess.stderr.on('data', function (data) {
+    ffmpegProcess.stderr.on('data', (data) => {
         logger(['ffmpeg-pipe', data]);
     });
 
     return ffmpegProcess;
 }
-
-module.exports = pipe;
