@@ -1,7 +1,8 @@
+import { FlvHeader, FlvPacketHeader, FlvPacket } from "./flv/flv";
+import { FlvStreamParser } from "./flv-stream";
+
 const fs = require('fs');
-const _ = require('lodash');
-const Writable = require('stream').Writable;
-const StreamParser = require('stream-parser');
+import * as _ from 'lodash';
 const childProcess = require('child_process');
 const ReadLine = require('readline');
 const microseconds = require('microseconds');
@@ -19,123 +20,6 @@ const getSubtitle = require('./subtitles-parser');
 
 //const flvStream = fs.createReadStream('video.flv');
 
-class FlvHeader {
-    constructor(header) {
-        let signature = header.toString('utf8', 0, 3);
-        let version = header.readUInt8(3);
-        let flags = header.readUInt8(4);
-        let headerSize = header.readUInt32BE(5);
-
-        if (signature !== 'FLV') throw new Error('Not FLV.');
-
-        this.signature = signature;
-        this.version = version;
-        this.flags = flags;
-        this.headerSize = headerSize;
-    }
-
-    buildHeader() {
-        let header = Buffer.alloc(this.headerSize);
-
-        header.write(this.signature);
-        header.writeUInt8(this.version, 3);
-        header.writeUInt8(this.flags, 4);
-        header.writeUInt32BE(this.headerSize, 5);
-
-        return header;
-    }
-}
-
-class FlvPacketHeader {
-    constructor(packetHeader) {
-        this.packetHeader = packetHeader;
-        this.prevPacketSize = packetHeader.readUInt32BE(0);
-        this.packetType = packetHeader.readUInt8(4);
-        this.payloadSize = packetHeader.readUIntBE(5, 3);
-        this.timestampLower = packetHeader.readUIntBE(8, 3);
-        this.timestampUpper = packetHeader.readUInt8(11);
-        this.streamId = packetHeader.readUIntBE(12, 3);
-    }
-
-    buildPacketHeader() {
-        let packetHeader = Buffer.alloc(15);
-
-        packetHeader.writeUInt32BE(this.prevPacketSize);
-        packetHeader.writeUInt8(this.packetType, 4);
-        packetHeader.writeUIntBE(this.payloadSize, 5, 3);
-        packetHeader.writeUIntBE(this.timestampLower, 8, 3);
-        packetHeader.writeUInt8(this.timestampUpper, 11);
-        packetHeader.writeUIntBE(this.streamId, 12, 3);
-
-        return packetHeader;
-    }
-}
-
-class FlvPacket {
-    constructor(packetHeader, payload) {
-        this.header = packetHeader;
-        this.payload = payload;
-        this.fullPacketSize = 15 + packetHeader.payloadSize;
-    }
-
-    getType() {
-        switch (this.header.packetType) {
-            case 8: {
-                return 'audio';
-            }
-            case 9: {
-                return 'video';
-            }
-            case 18: {
-                return 'metadata';
-            }
-            default: {
-                return 'unknown';
-            }
-        }
-    }
-}
-
-class FlvStreamParser extends Writable {
-    constructor() {
-        super();
-
-        this._bytes(9, this.onHeader);
-    }
-
-    onHeader(headerBuffer, output) {
-        let header = new FlvHeader(headerBuffer);
-
-        this.emit('header', header);
-
-        if (header.headerSize !== 9) {
-            this._skipBytes(header.headerSize - 9, () => {
-                this._bytes(15, this.onPacketHeader);
-            });
-        } else {
-            this._bytes(15, this.onPacketHeader);
-        }
-
-        output();
-    }
-
-    onPacketHeader(packetHeaderBuffer, output) {
-        const packetHeader = new FlvPacketHeader(packetHeaderBuffer);
-
-        this._bytes(packetHeader.payloadSize, (packetPayloadBuffer, output) => {
-            this.emit('packet', new FlvPacket(packetHeader, packetPayloadBuffer));
-
-            this._bytes(15, this.onPacketHeader);
-
-            output();
-        });
-
-        output();
-    }
-}
-
-StreamParser(FlvStreamParser.prototype);
-
 //const streamedFlv = fs.createWriteStream('streamed-flv.flv');
 
 const ffmpegProcess = ffmpegPipe();
@@ -151,24 +35,23 @@ const flvStreamParser2 = new FlvStreamParser();
 flvStream.pipe(flvStreamParser);
 flvStream2.pipe(flvStreamParser2);
 
-let mainHeader = null;
+let mainHeader: FlvHeader = null;
 
-flvStreamParser.on('header', function (header) {
+flvStreamParser.on('flv-header', (header: FlvHeader) => {
     logger([header], true);
 
     mainHeader = header;
 });
 
-let firstPacket = null;
-let firstMetaDataPacket = null;
-let firstAudioPacket = null;
-let firstVideoPacket = null;
+let firstMetaDataPacket: FlvPacket = null;
+let firstAudioPacket: FlvPacket = null;
+let firstVideoPacket: FlvPacket = null;
 
-flvStreamParser.on('packet', function (flvPacket) {
+flvStreamParser.on('flv-packet', (flvPacket: FlvPacket) => {
     savePacket(flvPacket);
 
     if (!firstMetaDataPacket && flvPacket.header.packetType === 18) {
-        let metadata = parseMetadata(flvPacket.payload);
+        const metadata = parseMetadata(flvPacket.payload);
 
         logger(['flvStreamParser', metadata], true);
 
@@ -176,7 +59,7 @@ flvStreamParser.on('packet', function (flvPacket) {
     }
 
     if (!firstAudioPacket && flvPacket.header.packetType === 8) {
-        let audioData = parseAudio(flvPacket.payload);
+        const audioData = parseAudio(flvPacket.payload);
 
         logger(['flvStreamParser', audioData], true);
 
@@ -184,7 +67,7 @@ flvStreamParser.on('packet', function (flvPacket) {
     }
 
     if (!firstVideoPacket && flvPacket.header.packetType === 9) {
-        let videoData = parseVideo(flvPacket.payload);
+        const videoData = parseVideo(flvPacket.payload);
 
         logger(['flvStreamParser', videoData], true);
 
@@ -192,28 +75,28 @@ flvStreamParser.on('packet', function (flvPacket) {
     }
 });
 
-let savedPackets2 = [];
-let savedPackets2Copy = [];
+const savedPackets2: FlvPacket[] = [];
+const savedPackets2Copy: FlvPacket[] = [];
 
-let flvStreamParserPacketCount = 0;
+let flvStreamParserPacketCount: number = 0;
 
-flvStreamParser2.on('packet', function (flvPacket) {
+flvStreamParser2.on('flv-packet', (flvPacket) => {
     flvStreamParserPacketCount++;
 
     if (flvPacket.header.timestampLower === 0 && flvPacket.header.packetType === 18) {
-        let metadata = parseMetadata(flvPacket.payload);
+        const metadata = parseMetadata(flvPacket.payload);
 
         logger(['flvStreamParser2', metadata], true);
     }
 
     if (flvPacket.header.timestampLower === 0 && flvPacket.header.packetType === 8) {
-        let audioData = parseAudio(flvPacket.payload);
+        const audioData = parseAudio(flvPacket.payload);
 
         logger(['flvStreamParser2', audioData], true);
     }
 
     if (flvPacket.header.timestampLower === 0 && flvPacket.header.packetType === 9) {
-        let videoData = parseVideo(flvPacket.payload);
+        const videoData = parseVideo(flvPacket.payload);
 
         logger(['flvStreamParser2', videoData], true);
     }
@@ -225,7 +108,7 @@ flvStreamParser2.on('packet', function (flvPacket) {
 
     //if (flvPacket.header.packetType === 18 && flvPacket.header.timestampLower === 0) return;
 
-    let lastPacket = _.last(savedPackets2);
+    const lastPacket = _.last(savedPackets2);
 
     if (lastPacket) {
         if (flvPacket.header.timestampLower >= lastPacket.header.timestampLower) {
@@ -240,11 +123,11 @@ flvStreamParser2.on('packet', function (flvPacket) {
     }
 });
 
-let prevPacket = null;
+let prevPacket: FlvPacket = null;
 
-let isDrained = true;
+let isDrained: boolean = true;
 
-function writePacket(flvPacket) {
+function writePacket(flvPacket: FlvPacket) {
     if (!prevPacket) {
         flvPacket.header.prevPacketSize = 0;
     } else {
@@ -255,14 +138,12 @@ function writePacket(flvPacket) {
 
     isDrained = ffmpegSendProcess.stdin.write(buffer);
 
-    publishFlv(buffer);
-
     prevPacket = flvPacket;
 }
 
-let savedPackets = [];
+const savedPackets: FlvPacket[] = [];
 
-function savePacket(flvPacket) {
+function savePacket(flvPacket: FlvPacket) {
     let lastPacket = _.last(savedPackets);
 
     if (lastPacket) {
@@ -276,52 +157,58 @@ function savePacket(flvPacket) {
     }
 }
 
-let nanoTimer = new NanoTimer();
-
-function sleep(mcs) {
+function sleep(mcs: number) {
     return new Promise(resolve => {
-        //nanoTimer.setTimeout(resolve, [], `${mcs}u`);
         setTimeout(resolve, mcs / 1000);
     });
 }
 
-let lastTimestamp = 0;
+let lastTimestamp: number = 0;
 
-let timestampDebt = 0;
+let timestampDebt: number = 0;
 
-let lastTimestampsIndex = 0;
+let lastTimestampsIndex: number = 0;
 
-let lastTimestamps = {
+interface ICursor {
+    lastTimestamp: number,
+    savedPackets: FlvPacket[]
+}
+
+interface ILastTimestamps {
+    [index: number]: ICursor
+}
+
+let lastTimestamps: ILastTimestamps = {
     0: {
         lastTimestamp: 0,
-        savedPackets: savedPackets
+        savedPackets
     },
     1: {
         lastTimestamp: 0,
-        savedPackets: savedPackets2
+        savedPackets
     }
 };
 
-let lastSwitchedTimestamp = 0;
-let lastPacketTimestamp = 0;
+let lastSwitchedTimestamp: number = 0;
+let lastPacketTimestamp: number = 0;
 
 let ffmpegSendProcess = sendRtmp();
 
-ffmpegSendProcess.stdin.on('close', function () {
+ffmpegSendProcess.stdin.on('close', () => {
     logger(['stdin close'], true);
 });
 
-ffmpegSendProcess.stdin.on('error', function (err) {
+ffmpegSendProcess.stdin.on('error', (err: Error) => {
     logger(['stdin error', err], true);
 
     process.exit(1);
 });
 
-ffmpegSendProcess.stdin.on('finish', function () {
+ffmpegSendProcess.stdin.on('finish', () => {
     logger(['stdin finish'], true);
 });
 
-ffmpegSendProcess.stdin.on('drain', function () {
+ffmpegSendProcess.stdin.on('drain', () => {
     //console.log('stdin drain');
 });
 
@@ -340,20 +227,18 @@ async function writeSequence() {
 
     await sleep(5 * 1000 * 1000);
 
-    let startTime = Date.now();
+    const startTime = Date.now();
 
     const buffer = mainHeader.buildHeader();
 
     ffmpegSendProcess.stdin.write(buffer);
 
-    publishFlv(buffer);
-
-    let drainingWaitingTime = 0;
+    let drainingWaitingTime: number = 0;
 
     while (true) {
-        let cursor = lastTimestamps[lastTimestampsIndex];
+        const cursor = lastTimestamps[lastTimestampsIndex];
 
-        let packet = _.first(cursor.savedPackets);
+        const packet = _.first(cursor.savedPackets);
 
         if (!packet) {
             logger(['packet not found, skipping...'], true);
@@ -367,7 +252,7 @@ async function writeSequence() {
             continue;
         }
 
-        let clonedPacket = _.cloneDeep(packet);
+        const clonedPacket = _.cloneDeep(packet);
 
         clonedPacket.header.timestampLower = lastSwitchedTimestamp + packet.header.timestampLower - cursor.lastTimestamp;
 
@@ -396,9 +281,9 @@ async function writeSequence() {
         //     writePacket(subtitlePacket);
         // }
 
-        let writingEndTime = microseconds.now();
+        const writingEndTime: number = microseconds.now();
 
-        let drainingStartTime = microseconds.now();
+        const drainingStartTime: number = microseconds.now();
 
         if (!isDrained) {
             //console.log('not drained, have to wait before writing...');
@@ -414,11 +299,11 @@ async function writeSequence() {
 
         drainingWaitingTime += microseconds.now() - drainingStartTime;
 
-        let nextPacket = cursor.savedPackets[1];
+        const nextPacket = cursor.savedPackets[1];
 
-        let waitTime = 0;
+        let waitTime: number = 0;
 
-        let threshold = clonedPacket.header.timestampLower - (Date.now() - startTime) + drainingWaitingTime / 1000;
+        const threshold: number = clonedPacket.header.timestampLower - (Date.now() - startTime) + drainingWaitingTime / 1000;
 
         if (nextPacket) {
             waitTime = nextPacket.header.timestampLower * 1000 - packet.header.timestampLower * 1000 - (writingEndTime - writingStartTime) - timestampDebt;
@@ -484,7 +369,7 @@ const readLine = ReadLine.createInterface({
     output: process.stdout
 });
 
-let streamingEncode = true;
+let streamingEncode: boolean = true;
 
 readLine.on('line', function (line) {
     if (line === 's') {
@@ -492,7 +377,7 @@ readLine.on('line', function (line) {
     }
 });
 
-let switchVideoRequestFlag = false;
+let switchVideoRequestFlag: boolean = false;
 
 function switchVideoRequest() {
     switchVideoRequestFlag = true;
