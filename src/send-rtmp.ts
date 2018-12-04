@@ -36,6 +36,10 @@ export function sendRtmp(): Writable {
         const mpcProcess = childProcess.spawn(config.mpcPath, ['playpath', '-'], { stdio: 'pipe' });
 
         ffmpegProcess.stdout.pipe(mpcProcess.stdin);
+
+        mpcProcess.on('exit', () => {
+            throw new Error('Player closed.');
+        });
     }
 
     ffmpegProcess.stderr.setEncoding('utf8');
