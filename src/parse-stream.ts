@@ -167,7 +167,7 @@ const lastTimestamps: ILastTimestamps = {
     },
     1: {
         lastTimestamp: 0,
-        savedPackets: mainStreamPackets
+        savedPackets: pausedStreamPackets
     }
 };
 
@@ -300,7 +300,7 @@ async function writeSequence() {
             clonedPacketTimestamp: clonedPacket.header.timestampLower,
             cursorLastTimestamp: cursor.lastTimestamp,
             isDrained
-        }], true);
+        }]);
 
         lastTimestamp = clonedPacket.header.timestampLower;
         lastPacketTimestamp = packet.header.timestampLower;
