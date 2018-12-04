@@ -83,7 +83,7 @@ pausedStreamFlv.on('flv-packet', (flvPacket: FlvPacket) => {
         logger(['flvStreamParser2', flvPacket.videoMetaData], true);
     }
 
-    if ([1, 2, 3].includes(flvStreamParserPacketCount)) {
+    if (flvStreamParserPacketCount < 4) {
         return;
     };
 
