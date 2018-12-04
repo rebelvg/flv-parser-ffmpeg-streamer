@@ -1,4 +1,4 @@
-import { FlvHeader, FlvPacketHeader, FlvPacket, PacketTypeEnum } from "./flv/flv";
+import { FlvHeader, FlvPacketHeader, FlvPacket, PacketTypeEnum } from "./flv";
 import { FlvStreamParser } from "./flv-stream";
 
 import * as fs from 'fs';

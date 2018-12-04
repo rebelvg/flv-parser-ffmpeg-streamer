@@ -1,4 +1,4 @@
-import { IMetaData, IAudioMetaData, IVideoMetaData, parseMetaData, parseAudio, parseVideo } from "../parse-data";
+import { IMetaData, IAudioMetaData, IVideoMetaData, parseMetaData, parseAudio, parseVideo } from "./parse-data";
 
 export class FlvHeader {
     public signature: string;
