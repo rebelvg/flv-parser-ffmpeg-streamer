@@ -286,22 +286,21 @@ async function writeSequence() {
         }
 
         logger(['writing packet...', {
-            threshold: threshold,
+            threshold,
             runningTime: Date.now() - startTime,
             drainingWaitingTime: drainingWaitingTime / 1000,
+            lastTimestamp,
             currentTimestamp: packet.header.timestampLower,
             nextPacketTimestamp: _.get(nextPacket, ['header', 'timestampLower'], 'no-next-packet'),
             currentPacketsLeft: cursor.savedPackets.length,
             waitTime: waitTime / 1000,
             debt: timestampDebt / 1000,
             writeTime: (writingEndTime - writingStartTime) / 1000,
-            lastSwitchedTimestamp: lastSwitchedTimestamp,
-            lastTimestamp: lastTimestamp,
+            lastSwitchedTimestamp,
             clonedPacketTimestamp: clonedPacket.header.timestampLower,
             cursorLastTimestamp: cursor.lastTimestamp,
-            clonedPacketPayloadSize: clonedPacket.header.payloadSize,
-            isDrained: isDrained
-        }]);
+            isDrained
+        }], true);
 
         lastTimestamp = clonedPacket.header.timestampLower;
         lastPacketTimestamp = packet.header.timestampLower;

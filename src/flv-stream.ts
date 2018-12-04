@@ -1,4 +1,4 @@
-import { FlvHeader, FlvPacketHeader, FlvPacket } from "./flv/flv";
+import { FlvHeader, FlvPacketHeader, FlvPacket } from "./flv";
 import * as StreamParser from 'stream-parser';
 import { Writable } from "stream";
 
