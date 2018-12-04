@@ -9,62 +9,69 @@ import { logger } from './logger';
 import { Writable } from 'stream';
 
 export function sendRtmp(): Writable {
-    const publishLink = _.get(config.publishLinks, [config.publishLink], '-');
+  const publishLink = _.get(config.publishLinks, [config.publishLink], '-');
 
-    const ffmpegProcess = childProcess.spawn(config.ffmpegPath, [
-        //'-re',
-        //'-nostats',
-        '-i', '-',
-        //'-isync',
-        '-vcodec', 'copy',
-        '-acodec', 'copy',
-        '-f', 'flv',
-        publishLink
-    ], {
-            stdio: 'pipe'
-        }
-    );
-
-    // const outputVideo = fs.createWriteStream('output.flv');
-    // ffmpegProcess.stdout.pipe(outputVideo);
-    //
-    // return {
-    //     stdin: outputVideo
-    // };
-
-    if (publishLink === '-') {
-        const mpcProcess = childProcess.spawn(config.mpcPath, ['playpath', '-'], { stdio: 'pipe' });
-
-        ffmpegProcess.stdout.pipe(mpcProcess.stdin);
-
-        mpcProcess.on('exit', () => {
-            throw new Error('Player closed.');
-        });
+  const ffmpegProcess = childProcess.spawn(
+    config.ffmpegPath,
+    [
+      //'-re',
+      //'-nostats',
+      '-i',
+      '-',
+      //'-isync',
+      '-vcodec',
+      'copy',
+      '-acodec',
+      'copy',
+      '-f',
+      'flv',
+      publishLink
+    ],
+    {
+      stdio: 'pipe'
     }
+  );
 
-    ffmpegProcess.stderr.setEncoding('utf8');
+  // const outputVideo = fs.createWriteStream('output.flv');
+  // ffmpegProcess.stdout.pipe(outputVideo);
+  //
+  // return {
+  //     stdin: outputVideo
+  // };
 
-    ffmpegProcess.stderr.on('data', (data) => {
-        logger(['send-rtmp', data]);
+  if (publishLink === '-') {
+    const mpcProcess = childProcess.spawn(config.mpcPath, ['playpath', '-'], { stdio: 'pipe' });
+
+    ffmpegProcess.stdout.pipe(mpcProcess.stdin);
+
+    mpcProcess.on('exit', () => {
+      throw new Error('Player closed.');
     });
+  }
 
-    ffmpegProcess.stdin.on('close', () => {
-        logger(['stdin close'], true);
-    });
+  ffmpegProcess.stderr.setEncoding('utf8');
 
-    ffmpegProcess.stdin.on('error', (err: Error) => {
-        logger(['stdin error', err], true);
+  ffmpegProcess.stderr.on('data', data => {
+    logger(['send-rtmp', data]);
+  });
 
-        process.exit(1);
-    });
+  ffmpegProcess.stdin.on('close', () => {
+    logger(['stdin close'], true);
+  });
 
-    ffmpegProcess.stdin.on('finish', () => {
-        logger(['stdin finish'], true);
-    });
+  ffmpegProcess.stdin.on('error', (err: Error) => {
+    logger(['stdin error', err], true);
 
-    ffmpegProcess.stdin.on('drain', () => {
-        //console.log('stdin drain');
-    });
+    process.exit(1);
+  });
 
-    return ffmpegProcess.stdin;
+  ffmpegProcess.stdin.on('finish', () => {
+    logger(['stdin finish'], true);
+  });
+
+  ffmpegProcess.stdin.on('drain', () => {
+    //console.log('stdin drain');
+  });
+
+  return ffmpegProcess.stdin;
 }

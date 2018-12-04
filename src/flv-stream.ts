@@ -1,43 +1,43 @@
-import { FlvHeader, FlvPacketHeader, FlvPacket } from "./flv";
+import { FlvHeader, FlvPacketHeader, FlvPacket } from './flv';
 import * as StreamParser from 'stream-parser';
-import { Writable } from "stream";
+import { Writable } from 'stream';
 
 export class FlvStreamParser extends Writable {
-    constructor() {
-        super();
+  constructor() {
+    super();
 
-        (this as any)._bytes(9, this.onHeader);
+    (this as any)._bytes(9, this.onHeader);
+  }
+
+  onHeader(headerBuffer: Buffer, output: () => void) {
+    const header = new FlvHeader(headerBuffer);
+
+    this.emit('flv-header', header);
+
+    if (header.headerSize !== 9) {
+      (this as any)._skipBytes(header.headerSize - 9, () => {
+        (this as any)._bytes(15, this.onPacketHeader);
+      });
+    } else {
+      (this as any)._bytes(15, this.onPacketHeader);
     }
 
-    onHeader(headerBuffer: Buffer, output: () => void) {
-        const header = new FlvHeader(headerBuffer);
+    output();
+  }
 
-        this.emit('flv-header', header);
+  onPacketHeader(packetHeaderBuffer: Buffer, output: () => void) {
+    const packetHeader = new FlvPacketHeader(packetHeaderBuffer);
 
-        if (header.headerSize !== 9) {
-            (this as any)._skipBytes(header.headerSize - 9, () => {
-                (this as any)._bytes(15, this.onPacketHeader);
-            });
-        } else {
-            (this as any)._bytes(15, this.onPacketHeader);
-        }
+    (this as any)._bytes(packetHeader.payloadSize, (packetPayloadBuffer: Buffer, output: () => void) => {
+      this.emit('flv-packet', new FlvPacket(packetHeader, packetPayloadBuffer));
 
-        output();
-    }
+      (this as any)._bytes(15, this.onPacketHeader);
 
-    onPacketHeader(packetHeaderBuffer: Buffer, output: () => void) {
-        const packetHeader = new FlvPacketHeader(packetHeaderBuffer);
+      output();
+    });
 
-        (this as any)._bytes(packetHeader.payloadSize, (packetPayloadBuffer: Buffer, output: () => void) => {
-            this.emit('flv-packet', new FlvPacket(packetHeader, packetPayloadBuffer));
-
-            (this as any)._bytes(15, this.onPacketHeader);
-
-            output();
-        });
-
-        output();
-    }
+    output();
+  }
 }
 
 StreamParser(FlvStreamParser.prototype);

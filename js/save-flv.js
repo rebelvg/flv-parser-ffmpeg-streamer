@@ -24,44 +24,44 @@ let packetsToBuffer = [];
 let firstVideoPacket = null;
 let firstAudioPacket = null;
 
-_.forEach(parsedFlv.contentPackets, (flvPacket) => {
-    if (!firstVideoPacket && flvPacket.packetType === 9) {
-        packetsToBuffer.push(flvPacket);
+_.forEach(parsedFlv.contentPackets, flvPacket => {
+  if (!firstVideoPacket && flvPacket.packetType === 9) {
+    packetsToBuffer.push(flvPacket);
 
-        return firstVideoPacket = flvPacket;
-    }
+    return (firstVideoPacket = flvPacket);
+  }
 
-    if (!firstAudioPacket && flvPacket.packetType === 8) {
-        packetsToBuffer.push(flvPacket);
+  if (!firstAudioPacket && flvPacket.packetType === 8) {
+    packetsToBuffer.push(flvPacket);
 
-        return firstAudioPacket = flvPacket;
-    }
+    return (firstAudioPacket = flvPacket);
+  }
 
-    if (firstVideoPacket && firstAudioPacket) return false;
+  if (firstVideoPacket && firstAudioPacket) return false;
 });
 
 function writePacketSequence(where, what) {
-    let startTimestamp = _.last(where).timestampLower;
+  let startTimestamp = _.last(where).timestampLower;
 
-    let timestampOffset = _.first(what).timestampLower - startTimestamp;
+  let timestampOffset = _.first(what).timestampLower - startTimestamp;
 
-    let firstPacket = null;
+  let firstPacket = null;
 
-    what = _.cloneDeep(what);
+  what = _.cloneDeep(what);
 
-    _.forEach(what, (flvPacket) => {
-        if (!firstPacket) {
-            firstPacket = flvPacket;
+  _.forEach(what, flvPacket => {
+    if (!firstPacket) {
+      firstPacket = flvPacket;
 
-            console.log('first packet content type', flvPacket.packetType);
+      console.log('first packet content type', flvPacket.packetType);
 
-            firstPacket.timestampLower = startTimestamp;
-        } else {
-            flvPacket.timestampLower = flvPacket.timestampLower - timestampOffset;
-        }
+      firstPacket.timestampLower = startTimestamp;
+    } else {
+      flvPacket.timestampLower = flvPacket.timestampLower - timestampOffset;
+    }
 
-        where.push(flvPacket);
-    });
+    where.push(flvPacket);
+  });
 }
 
 let writePackets = _.slice(parsedFlv.contentPackets, 2, 3000);
@@ -71,12 +71,12 @@ writePacketSequence(packetsToBuffer, writePackets);
 let lastPacket = parsedFlv.firstPacket;
 
 _.forEach(packetsToBuffer, (flvPacket, i) => {
-    flvPacket.prevPacketSize = 11 + lastPacket.payloadSize;
+  flvPacket.prevPacketSize = 11 + lastPacket.payloadSize;
 
-    writeBuffer.push(flvPacket.generateHeader());
-    writeBuffer.push(flvPacket.payload);
+  writeBuffer.push(flvPacket.generateHeader());
+  writeBuffer.push(flvPacket.payload);
 
-    lastPacket = flvPacket;
+  lastPacket = flvPacket;
 });
 
 let lastBuffer = Buffer.alloc(4);

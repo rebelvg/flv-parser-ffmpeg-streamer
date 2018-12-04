@@ -5,23 +5,27 @@ import * as Subtitles from 'subtitle';
 import { config } from '../config';
 
 const subtitlesFile = fs.readFileSync(config.subtitlesFile, {
-    encoding: 'utf-8'
+  encoding: 'utf-8'
 });
 
 const subtitles = Subtitles.parse(subtitlesFile);
 
 export function getSubtitle(timestamp: number): string {
-    const videoStart = config.videoStart.split(':');
+  const videoStart = config.videoStart.split(':');
 
-    timestamp += timestamp + (parseInt(videoStart[0]) * 60 * 60 * 1000) + (parseInt(videoStart[1]) * 60 * 1000) + (parseInt(videoStart[2]) * 1000);
+  timestamp +=
+    timestamp +
+    parseInt(videoStart[0]) * 60 * 60 * 1000 +
+    parseInt(videoStart[1]) * 60 * 1000 +
+    parseInt(videoStart[2]) * 1000;
 
-    const subtitle = _.find(subtitles, (subtitle) => {
-        return subtitle.start <= timestamp && subtitle.end >= timestamp;
-    });
+  const subtitle = _.find(subtitles, subtitle => {
+    return subtitle.start <= timestamp && subtitle.end >= timestamp;
+  });
 
-    if (!subtitle) {
-        return null;
-    }
+  if (!subtitle) {
+    return null;
+  }
 
-    return subtitle.text;
+  return subtitle.text;
 }
