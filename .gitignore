@@ -1,8 +1,8 @@
-/.vscode
-/.idea
-/node_modules
-/logs
-*log
+.vscode/
+.idea/
+node_modules/
+logs/
 config.json
 config.ts
+*log
 *.flv
