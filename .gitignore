@@ -4,5 +4,5 @@ node_modules/
 logs/
 config.json
 config.ts
-*log
+*.log
 *.flv
