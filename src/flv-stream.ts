@@ -2,11 +2,18 @@ import { FlvHeader, FlvPacketHeader, FlvPacket } from './flv';
 import * as StreamParser from 'stream-parser';
 import { Writable } from 'stream';
 
+declare module 'stream' {
+  interface Writable {
+    _bytes(bytesCount: number, cb: Function): void;
+    _skipBytes(bytesCount: number, cb: Function): void;
+  }
+}
+
 export class FlvStreamParser extends Writable {
   constructor() {
     super();
 
-    (this as any)._bytes(9, this.onHeader);
+    this._bytes(9, this.onHeader);
   }
 
   onHeader(headerBuffer: Buffer, output: () => void) {
@@ -15,11 +22,11 @@ export class FlvStreamParser extends Writable {
     this.emit('flv-header', header);
 
     if (header.headerSize !== 9) {
-      (this as any)._skipBytes(header.headerSize - 9, () => {
-        (this as any)._bytes(15, this.onPacketHeader);
+      this._skipBytes(header.headerSize - 9, () => {
+        this._bytes(15, this.onPacketHeader);
       });
     } else {
-      (this as any)._bytes(15, this.onPacketHeader);
+      this._bytes(15, this.onPacketHeader);
     }
 
     output();
@@ -28,10 +35,10 @@ export class FlvStreamParser extends Writable {
   onPacketHeader(packetHeaderBuffer: Buffer, output: () => void) {
     const packetHeader = new FlvPacketHeader(packetHeaderBuffer);
 
-    (this as any)._bytes(packetHeader.payloadSize, (packetPayloadBuffer: Buffer, output: () => void) => {
+    this._bytes(packetHeader.payloadSize, (packetPayloadBuffer: Buffer, output: () => void) => {
       this.emit('flv-packet', new FlvPacket(packetHeader, packetPayloadBuffer));
 
-      (this as any)._bytes(15, this.onPacketHeader);
+      this._bytes(15, this.onPacketHeader);
 
       output();
     });
