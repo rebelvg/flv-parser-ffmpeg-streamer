@@ -20,7 +20,7 @@ export class FlvHeader {
     this.headerSize = headerSize;
   }
 
-  buildHeader(): Buffer {
+  public buildHeader(): Buffer {
     const header = Buffer.alloc(this.headerSize);
 
     header.write(this.signature);
@@ -51,7 +51,7 @@ export class FlvPacketHeader {
     this.streamId = packetHeader.readUIntBE(12, 3);
   }
 
-  buildPacketHeader(): Buffer {
+  public buildPacketHeader(): Buffer {
     const packetHeader = Buffer.alloc(15);
 
     packetHeader.writeUInt32BE(this.prevPacketSize, 0);
@@ -81,7 +81,7 @@ export class FlvPacket {
   public audioMetaData: IAudioMetaData;
   public videoMetaData: IVideoMetaData;
 
-  public packetType: string;
+  public packetType: PacketTypeEnum;
 
   constructor(packetHeader: FlvPacketHeader, payload: Buffer) {
     this.header = packetHeader;
@@ -91,7 +91,7 @@ export class FlvPacket {
     this.packetType = this.getType(payload);
   }
 
-  private getType(payload: Buffer): string {
+  private getType(payload: Buffer): PacketTypeEnum {
     switch (this.header.packetType) {
       case 8: {
         this.audioMetaData = parseAudio(payload);
@@ -114,7 +114,7 @@ export class FlvPacket {
     }
   }
 
-  buildPacket(): Buffer {
+  public buildPacket(): Buffer {
     return Buffer.concat([this.header.buildPacketHeader(), this.payload]);
   }
 }

@@ -1,19 +1,26 @@
 import * as io from 'socket.io-client';
 
 import { config } from '../config';
-import { FlvPacket } from './flv';
 
-const socket = io(config.socketServer);
+let socket;
 
-export function publishSubtitles(timestamp: number, text: string) {
-  socket.emit('subtitles', {
-    timestamp,
-    text
-  });
+if (config.socketServer) {
+  socket = io(config.socketServer);
 }
 
-export function publishFlv(flvPacket: FlvPacket) {
-  socket.emit('flv_packet', {
-    flvPacket
-  });
+export function publishSubtitles(timestamp: number, text: string) {
+  if (socket) {
+    socket.emit('subtitles', {
+      timestamp,
+      text
+    });
+  }
+}
+
+export function publishFlv(flvPacket: Buffer) {
+  if (socket) {
+    socket.emit('flv_packet', {
+      flvPacket
+    });
+  }
 }

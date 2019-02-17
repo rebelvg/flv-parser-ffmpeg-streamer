@@ -1,7 +1,6 @@
 {
   "name": "ffmpeg-streamer",
   "version": "1.0.0",
-  "main": "parse-stream.js",
   "license": "MIT",
   "scripts": {
     "stream": "ts-node src/parse-stream"

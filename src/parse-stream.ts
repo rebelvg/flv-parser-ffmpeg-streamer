@@ -1,7 +1,6 @@
-import { FlvHeader, FlvPacketHeader, FlvPacket, PacketTypeEnum } from './flv';
+import { FlvHeader, FlvPacket, PacketTypeEnum } from './flv';
 import { FlvStreamParser } from './flv-stream';
 
-import * as fs from 'fs';
 import * as _ from 'lodash';
 import * as ReadLine from 'readline';
 import * as microseconds from 'microseconds';
@@ -9,19 +8,13 @@ import * as microseconds from 'microseconds';
 import { config } from '../config';
 import { pipeMainFile } from './ffmpeg-pipe';
 import { preparePaused } from './prepare-paused';
-import { sendRtmp } from './send-rtmp';
 import { logger } from './logger';
-import { publishFlv, publishSubtitles } from './socket-publisher';
+import { publishSubtitles } from './socket-publisher';
 import { getSubtitle } from './subtitles-parser';
-
-//const flvStream = fs.createReadStream('video.flv');
-
-//const streamedFlv = fs.createWriteStream('streamed-flv.flv');
+import { outputFlvPacket, outputFlvHeader } from './output';
 
 const mainStreamReadable = pipeMainFile();
 const pausedStreamReadable = preparePaused();
-
-//const flvStream = fs.createReadStream('video.flv');
 
 const mainStreamFlv = new FlvStreamParser();
 const pausedStreamFlv = new FlvStreamParser();
@@ -88,6 +81,7 @@ pausedStreamFlv.on('flv-packet', (flvPacket: FlvPacket) => {
   }
 
   //console.log(flvStreamParserPacketCount, flvPacket.header.packetType, flvPacket.header.timestampLower, flvPacket.header.payloadSize);
+
   //if (flvPacket.header.packetType === 9) console.log(flvStreamParserPacketCount, parseVideo(flvPacket.payload));
 
   //if (flvPacket.header.packetType === 18 && flvPacket.header.timestampLower === 0) return;
@@ -109,8 +103,6 @@ pausedStreamFlv.on('flv-packet', (flvPacket: FlvPacket) => {
 
 let prevPacket: FlvPacket = null;
 
-let isDrained: boolean = true;
-
 function writePacket(flvPacket: FlvPacket) {
   if (!prevPacket) {
     flvPacket.header.prevPacketSize = 0;
@@ -118,7 +110,7 @@ function writePacket(flvPacket: FlvPacket) {
     flvPacket.header.prevPacketSize = 11 + prevPacket.header.payloadSize;
   }
 
-  isDrained = ffmpegSendProcess.write(flvPacket.buildPacket());
+  outputFlvPacket(flvPacket);
 
   prevPacket = flvPacket;
 }
@@ -174,8 +166,6 @@ const lastTimestamps: ILastTimestamps = {
 let lastSwitchedTimestamp: number = 0;
 let lastPacketTimestamp: number = 0;
 
-const ffmpegSendProcess = sendRtmp();
-
 async function writeSequence() {
   logger(['writing...'], true);
 
@@ -193,9 +183,7 @@ async function writeSequence() {
 
   const startTime = Date.now();
 
-  const buffer = mainStreamHeader.buildHeader();
-
-  ffmpegSendProcess.write(buffer);
+  outputFlvHeader(mainStreamHeader);
 
   let drainingWaitingTime: number = 0;
 
@@ -206,10 +194,6 @@ async function writeSequence() {
 
     if (!packet) {
       logger(['packet not found, skipping...'], true);
-
-      // console.log('writing went for', Date.now() - startTime);
-      //
-      // process.exit();
 
       await sleep(1000);
 
@@ -224,7 +208,7 @@ async function writeSequence() {
 
     writePacket(clonedPacket);
 
-    if (lastTimestampsIndex === 0 && clonedPacket.header.packetType === 9) {
+    if (lastTimestampsIndex === 0 && clonedPacket.packetType === PacketTypeEnum.VIDEO) {
       const timestamp = clonedPacket.header.timestampLower;
 
       const text = getSubtitle(packet.header.timestampLower);
@@ -232,33 +216,9 @@ async function writeSequence() {
       publishSubtitles(timestamp, text);
     }
 
-    // if (clonedPacket.getType() === 'video') {
-    //     const subtitlePacket = _.cloneDeep(clonedPacket);
-    //
-    //     const subtitles = createSubtitlesMetadata('test subtitles');
-    //
-    //     subtitlePacket.header.prevPacketSize = clonedPacket.header.payloadSize;
-    //     subtitlePacket.header.packetType = 18;
-    //     subtitlePacket.header.payloadSize = subtitles.length;
-    //     subtitlePacket.payload = subtitles;
-    //
-    //     writePacket(subtitlePacket);
-    // }
-
     const writingEndTime: number = microseconds.now();
 
     const drainingStartTime: number = microseconds.now();
-
-    if (!isDrained) {
-      //console.log('not drained, have to wait before writing...');
-      // await new Promise(resolve => {
-      //     ffmpegSendProcess.stdin.once('drain', () => {
-      //         //console.log('stdin drain once');
-      //
-      //         resolve();
-      //     });
-      // });
-    }
 
     drainingWaitingTime += microseconds.now() - drainingStartTime;
 
@@ -304,8 +264,7 @@ async function writeSequence() {
         writeTime: (writingEndTime - writingStartTime) / 1000,
         lastSwitchedTimestamp,
         clonedPacketTimestamp: clonedPacket.header.timestampLower,
-        cursorLastTimestamp: cursor.lastTimestamp,
-        isDrained
+        cursorLastTimestamp: cursor.lastTimestamp
       }
     ]);
 
