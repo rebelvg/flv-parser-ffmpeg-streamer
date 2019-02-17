@@ -91,6 +91,10 @@ export class FlvPacket {
     this.packetType = this.getType(payload);
   }
 
+  public buildPacket(): Buffer {
+    return Buffer.concat([this.header.buildPacketHeader(), this.payload]);
+  }
+
   private getType(payload: Buffer): PacketTypeEnum {
     switch (this.header.packetType) {
       case 8: {
@@ -112,9 +116,5 @@ export class FlvPacket {
         return PacketTypeEnum.UNKNWONN;
       }
     }
-  }
-
-  public buildPacket(): Buffer {
-    return Buffer.concat([this.header.buildPacketHeader(), this.payload]);
   }
 }

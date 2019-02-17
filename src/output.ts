@@ -3,7 +3,7 @@ import { sendRtmp } from './send-rtmp';
 
 import { config } from '../config';
 import { Writable } from 'stream';
-import { publishFlv } from './socket-publisher';
+import { publishFlvHeader, publishFlvPacket } from './socket-publisher';
 
 let ffmpegSendProcess: Writable;
 
@@ -16,9 +16,7 @@ export function outputFlvHeader(flvHeader: FlvHeader) {
     ffmpegSendProcess.write(flvHeader.buildHeader());
   }
 
-  if (config.socketServer) {
-    publishFlv(flvHeader.buildHeader());
-  }
+  publishFlvHeader(flvHeader);
 }
 
 export function outputFlvPacket(flvPacket: FlvPacket) {
@@ -26,7 +24,5 @@ export function outputFlvPacket(flvPacket: FlvPacket) {
     ffmpegSendProcess.write(flvPacket.buildPacket());
   }
 
-  if (config.socketServer) {
-    publishFlv(flvPacket.buildPacket());
-  }
+  publishFlvPacket(flvPacket);
 }
