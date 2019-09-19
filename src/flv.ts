@@ -69,7 +69,7 @@ export enum PacketTypeEnum {
   AUDIO = 'audio',
   VIDEO = 'video',
   METADATA = 'metadata',
-  UNKNWONN = 'unknown'
+  UNKNOWN = 'unknown'
 }
 
 export class FlvPacket {
@@ -113,7 +113,7 @@ export class FlvPacket {
         return PacketTypeEnum.METADATA;
       }
       default: {
-        return PacketTypeEnum.UNKNWONN;
+        return PacketTypeEnum.UNKNOWN;
       }
     }
   }
