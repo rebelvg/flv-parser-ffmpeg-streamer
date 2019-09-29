@@ -2,18 +2,19 @@ import { FlvHeader, FlvPacketHeader, FlvPacket } from './flv';
 import * as StreamParser from 'stream-parser';
 import { Writable } from 'stream';
 
-declare module 'stream' {
-  interface Writable {
-    _bytes(bytesCount: number, cb: Function): void;
-    _skipBytes(bytesCount: number, cb: Function): void;
-  }
-}
-
 export class FlvStreamParser extends Writable {
   constructor() {
     super();
 
     this._bytes(9, this.onHeader);
+  }
+
+  protected _bytes(bytesCount: number, cb: Function): void {
+    super['_bytes'](bytesCount, cb);
+  }
+
+  protected _skipBytes(bytesCount: number, cb: Function): void {
+    super['_skipBytes'](bytesCount, cb);
   }
 
   onHeader(headerBuffer: Buffer, output: () => void) {
