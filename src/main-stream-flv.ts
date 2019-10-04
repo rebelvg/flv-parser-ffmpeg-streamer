@@ -28,7 +28,7 @@ mainStreamFlv.on('flv-packet', (flvPacket: FlvPacket) => {
 
 mainStreamFlv.on('flv-packet-audio', (flvPacket: FlvPacketAudio) => {
   if (!firstAudioPacket) {
-    logger(['main stream audio', flvPacket.audioData], true);
+    logger(['main stream audio', flvPacket.data], true);
 
     firstAudioPacket = flvPacket;
   }
@@ -36,7 +36,7 @@ mainStreamFlv.on('flv-packet-audio', (flvPacket: FlvPacketAudio) => {
 
 mainStreamFlv.on('flv-packet-video', (flvPacket: FlvPacketVideo) => {
   if (!firstVideoPacket) {
-    logger(['main stream video', flvPacket.videoData], true);
+    logger(['main stream video', flvPacket.data], true);
 
     firstVideoPacket = flvPacket;
   }
@@ -44,7 +44,7 @@ mainStreamFlv.on('flv-packet-video', (flvPacket: FlvPacketVideo) => {
 
 mainStreamFlv.on('flv-packet-metadata', (flvPacket: FlvPacketMetadata) => {
   if (!firstMetaDataPacket) {
-    logger(['main stream metadata', flvPacket.metadata], true);
+    logger(['main stream metadata', flvPacket.data], true);
 
     firstMetaDataPacket = flvPacket;
   }

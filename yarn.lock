@@ -172,10 +172,10 @@ ms@2.0.0:
   version "2.0.0"
   resolved "https://registry.yarnpkg.com/ms/-/ms-2.0.0.tgz#5608aeadfc00be6c2901df5f9861788de0d597c8"
 
-node-flv@^0.0.11:
-  version "0.0.11"
-  resolved "https://registry.yarnpkg.com/node-flv/-/node-flv-0.0.11.tgz#be049d61077bb500fdc034e63e9e4cf500a3ac6a"
-  integrity sha512-qA+x6TKfPFwqYoa+EhRoSnllT2ljAOrX8QcF9eoj7Hy3YX3awyBnokAswr22OUE54Ucr7wa2Fa0a3YFzamfx7Q==
+node-flv@^0.0.12:
+  version "0.0.12"
+  resolved "https://registry.yarnpkg.com/node-flv/-/node-flv-0.0.12.tgz#e73e296d92e847b1df3bc6e6cb5ab9ffc91981c2"
+  integrity sha512-OfFfzCDIMptEdiY4hnq6iAvvlvi+Z3xYy8f8IfeVQgN4h2SXCkxLicu+C5TlL+vlgzNYw0bBb7sd4sr0sDCLzQ==
   dependencies:
     bitwise "^0.2.0"
     lodash "^4.17.15"

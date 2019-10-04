@@ -42,13 +42,13 @@ pausedStreamFlv.on('flv-packet', (flvPacket: FlvPacket) => {
 
 pausedStreamFlv.on('flv-packet-audio', (flvPacket: FlvPacketAudio) => {
   if (flvPacket.flvPacketHeader.timestampLower === 0) {
-    logger(['pausedStreamFlv audio', flvPacket.audioData], true);
+    logger(['pausedStreamFlv audio', flvPacket.data], true);
   }
 });
 
 pausedStreamFlv.on('flv-packet-video', (flvPacket: FlvPacketVideo) => {
   if (flvPacket.flvPacketHeader.timestampLower === 0) {
-    logger(['pausedStreamFlv video', flvPacket.videoData], true);
+    logger(['pausedStreamFlv video', flvPacket.data], true);
   }
 
   // console.log(flvStreamParserPacketCount, flvPacket.videoData);
@@ -56,7 +56,7 @@ pausedStreamFlv.on('flv-packet-video', (flvPacket: FlvPacketVideo) => {
 
 pausedStreamFlv.on('flv-packet-metadata', (flvPacket: FlvPacketMetadata) => {
   if (flvPacket.flvPacketHeader.timestampLower === 0) {
-    logger(['pausedStreamFlv metadata', flvPacket.metadata], true);
+    logger(['pausedStreamFlv metadata', flvPacket.data], true);
   }
 });
 
