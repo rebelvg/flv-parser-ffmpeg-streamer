@@ -1,7 +1,7 @@
 import * as io from 'socket.io-client';
+import { FlvHeader, FlvPacket } from 'node-flv';
 
 import { config } from '../config';
-import { FlvHeader, FlvPacket } from './flv';
 
 let socket;
 
