@@ -1,160 +1,19 @@
-import * as ReadLine from 'readline';
 import * as _ from 'lodash';
 import * as microseconds from 'microseconds';
-import {
-  FlvStreamParser,
-  FlvHeader,
-  FlvPacket,
-  PacketTypeEnum,
-  FlvPacketAudio,
-  FlvPacketVideo,
-  FlvPacketMetadata
-} from 'node-flv';
+import { FlvPacket, PacketTypeEnum } from 'node-flv';
 
 import { config } from '../config';
-import { pipeMainFile } from './ffmpeg-pipe';
-import { preparePaused } from './prepare-paused';
 import { logger } from './logger';
 import { publishSubtitles } from './socket-publisher';
 import { getSubtitle } from './subtitles-parser';
-import { outputFlvPacket, outputFlvHeader } from './output';
-
-const mainStreamReadable = pipeMainFile();
-const pausedStreamReadable = preparePaused();
-
-const mainStreamFlv = new FlvStreamParser();
-const pausedStreamFlv = new FlvStreamParser();
-
-mainStreamReadable.pipe(mainStreamFlv);
-pausedStreamReadable.pipe(pausedStreamFlv);
-
-let mainStreamHeader: FlvHeader = null;
-
-mainStreamFlv.on('flv-header', (flvHeader: FlvHeader) => {
-  logger(['flv-header', flvHeader], true);
-
-  mainStreamHeader = flvHeader;
-});
-
-let firstAudioPacket: FlvPacket = null;
-let firstVideoPacket: FlvPacket = null;
-let firstMetaDataPacket: FlvPacket = null;
-
-mainStreamFlv.on('flv-packet', (flvPacket: FlvPacket) => {
-  saveMainStreamPacket(flvPacket);
-});
-
-mainStreamFlv.on('flv-packet-audio', (flvPacket: FlvPacketAudio) => {
-  if (!firstAudioPacket) {
-    logger(['flvStreamParser', flvPacket.audioData], true);
-
-    firstAudioPacket = flvPacket;
-  }
-});
-
-mainStreamFlv.on('flv-packet-video', (flvPacket: FlvPacketVideo) => {
-  if (!firstVideoPacket) {
-    logger(['flvStreamParser', flvPacket.videoData], true);
-
-    firstVideoPacket = flvPacket;
-  }
-});
-
-mainStreamFlv.on('flv-packet-metadata', (flvPacket: FlvPacketMetadata) => {
-  if (!firstMetaDataPacket) {
-    logger(['flvStreamParser', flvPacket.metadata], true);
-
-    firstMetaDataPacket = flvPacket;
-  }
-});
-
-const pausedStreamPackets: FlvPacket[] = [];
-const pausedStreamPacketsCopy: FlvPacket[] = [];
-
-let flvStreamParserPacketCount: number = 0;
-
-pausedStreamFlv.on('flv-packet', (flvPacket: FlvPacket) => {
-  flvStreamParserPacketCount++;
-
-  if (flvStreamParserPacketCount < 4) {
-    return;
-  }
-
-  const lastPacket = _.last(pausedStreamPackets);
-
-  if (lastPacket) {
-    if (flvPacket.flvPacketHeader.timestampLower >= lastPacket.flvPacketHeader.timestampLower) {
-      pausedStreamPackets.push(flvPacket);
-      pausedStreamPacketsCopy.push(flvPacket);
-    } else {
-      logger(['savedPackets2', 'skipping saving for', flvPacket.flvPacketHeader.packetTypeEnum], true);
-    }
-  } else {
-    pausedStreamPackets.push(flvPacket);
-    pausedStreamPacketsCopy.push(flvPacket);
-  }
-});
-
-pausedStreamFlv.on('flv-packet-audio', (flvPacket: FlvPacketAudio) => {
-  if (flvPacket.flvPacketHeader.timestampLower === 0) {
-    logger(['flvStreamParser2', flvPacket.audioData], true);
-  }
-});
-
-pausedStreamFlv.on('flv-packet-video', (flvPacket: FlvPacketVideo) => {
-  if (flvPacket.flvPacketHeader.timestampLower === 0) {
-    logger(['flvStreamParser2', flvPacket.videoData], true);
-  }
-
-  // console.log(flvStreamParserPacketCount, flvPacket.videoData);
-});
-
-pausedStreamFlv.on('flv-packet-metadata', (flvPacket: FlvPacketMetadata) => {
-  if (flvPacket.flvPacketHeader.timestampLower === 0) {
-    logger(['flvStreamParser2', flvPacket.metadata], true);
-  }
-});
-
-let prevPacket: FlvPacket = null;
-
-function writePacket(flvPacket: FlvPacket) {
-  if (!prevPacket) {
-    flvPacket.flvPacketHeader.prevPacketSize = 0;
-  } else {
-    flvPacket.flvPacketHeader.prevPacketSize = 11 + prevPacket.flvPacketHeader.payloadSize;
-  }
-
-  outputFlvPacket(flvPacket);
-
-  prevPacket = flvPacket;
-}
-
-const mainStreamPackets: FlvPacket[] = [];
-
-function saveMainStreamPacket(flvPacket: FlvPacket) {
-  const lastPacket = _.last(mainStreamPackets);
-
-  if (lastPacket) {
-    if (flvPacket.flvPacketHeader.timestampLower >= lastPacket.flvPacketHeader.timestampLower) {
-      mainStreamPackets.push(flvPacket);
-    } else {
-      logger(['savedPackets', 'skipping saving for', flvPacket.flvPacketHeader.packetTypeEnum], true);
-    }
-  } else {
-    mainStreamPackets.push(flvPacket);
-  }
-}
-
-function sleep(mcs: number) {
-  return new Promise(resolve => {
-    setTimeout(resolve, mcs / 1000);
-  });
-}
+import { outputFlvHeader, writePacket } from './output';
+import { sleep } from './helpers';
+import { mainStreamPackets, mainStreamHeader } from './main-stream-flv';
+import { pausedStreamPackets, pausedStreamPacketsCopy } from './paused-stream-flv';
+import { attachReadline } from './readline';
 
 let lastTimestamp: number = 0;
-
 let timestampDebt: number = 0;
-
 let lastTimestampsIndex: number = 0;
 
 interface ICursor {
@@ -204,9 +63,9 @@ async function writeSequence() {
   while (true) {
     const cursor = lastTimestamps[lastTimestampsIndex];
 
-    const packet = _.first(cursor.savedPackets);
+    const flvPacket = _.first(cursor.savedPackets);
 
-    if (!packet) {
+    if (!flvPacket) {
       logger(['packet not found, skipping...'], true);
 
       await sleep(1000);
@@ -214,10 +73,10 @@ async function writeSequence() {
       continue;
     }
 
-    const clonedPacket = _.cloneDeep(packet);
+    const clonedPacket = _.cloneDeep(flvPacket);
 
     clonedPacket.flvPacketHeader.timestampLower =
-      lastSwitchedTimestamp + packet.flvPacketHeader.timestampLower - cursor.lastTimestamp;
+      lastSwitchedTimestamp + flvPacket.flvPacketHeader.timestampLower - cursor.lastTimestamp;
 
     let writingStartTime = microseconds.now();
 
@@ -226,7 +85,7 @@ async function writeSequence() {
     if (lastTimestampsIndex === 0 && clonedPacket.flvPacketHeader.packetTypeEnum === PacketTypeEnum.VIDEO) {
       const timestamp = clonedPacket.flvPacketHeader.timestampLower;
 
-      const text = getSubtitle(packet.flvPacketHeader.timestampLower);
+      const text = getSubtitle(flvPacket.flvPacketHeader.timestampLower);
 
       publishSubtitles(timestamp, text);
     }
@@ -247,7 +106,7 @@ async function writeSequence() {
     if (nextPacket) {
       waitTime =
         nextPacket.flvPacketHeader.timestampLower * 1000 -
-        packet.flvPacketHeader.timestampLower * 1000 -
+        flvPacket.flvPacketHeader.timestampLower * 1000 -
         (writingEndTime - writingStartTime) -
         timestampDebt;
 
@@ -271,7 +130,7 @@ async function writeSequence() {
         runningTime: Date.now() - startTime,
         drainingWaitingTime: drainingWaitingTime / 1000,
         lastTimestamp,
-        currentTimestamp: packet.flvPacketHeader.timestampLower,
+        currentTimestamp: flvPacket.flvPacketHeader.timestampLower,
         nextPacketTimestamp: _.get(nextPacket, ['header', 'timestampLower'], 'no-next-packet'),
         currentPacketsLeft: cursor.savedPackets.length,
         waitTime: waitTime / 1000,
@@ -284,7 +143,7 @@ async function writeSequence() {
     ]);
 
     lastTimestamp = clonedPacket.flvPacketHeader.timestampLower;
-    lastPacketTimestamp = packet.flvPacketHeader.timestampLower;
+    lastPacketTimestamp = flvPacket.flvPacketHeader.timestampLower;
 
     cursor.savedPackets.shift();
 
@@ -293,14 +152,14 @@ async function writeSequence() {
 
       _.forEach(cursor.savedPackets, flvPacket => {
         flvPacket.flvPacketHeader.timestampLower =
-          packet.flvPacketHeader.timestampLower +
+          flvPacket.flvPacketHeader.timestampLower +
           flvPacket.flvPacketHeader.timestampLower -
           Math.ceil(1000 / config.framerate);
       });
 
       logger([
         'cloned packets.',
-        packet.flvPacketHeader.timestampLower,
+        flvPacket.flvPacketHeader.timestampLower,
         _.first(cursor.savedPackets).flvPacketHeader.timestampLower
       ]);
     }
@@ -315,22 +174,10 @@ async function writeSequence() {
   }
 }
 
-const readLine = ReadLine.createInterface({
-  input: process.stdin,
-  output: process.stdout
-});
-
+let switchVideoRequestFlag: boolean = false;
 let streamingEncode: boolean = true;
 
-readLine.on('line', line => {
-  if (line === 's') {
-    switchVideoRequest();
-  }
-});
-
-let switchVideoRequestFlag: boolean = false;
-
-function switchVideoRequest() {
+export function switchVideoRequest() {
   switchVideoRequestFlag = true;
 }
 
@@ -351,3 +198,5 @@ function switchVideoRequested() {
 }
 
 writeSequence();
+
+attachReadline();

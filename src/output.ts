@@ -26,3 +26,17 @@ export function outputFlvPacket(flvPacket: FlvPacket) {
 
   publishFlvPacket(flvPacket);
 }
+
+let prevPacket: FlvPacket = null;
+
+export function writePacket(flvPacket: FlvPacket) {
+  if (!prevPacket) {
+    flvPacket.flvPacketHeader.prevPacketSize = 0;
+  } else {
+    flvPacket.flvPacketHeader.prevPacketSize = 11 + prevPacket.flvPacketHeader.payloadSize;
+  }
+
+  outputFlvPacket(flvPacket);
+
+  prevPacket = flvPacket;
+}
