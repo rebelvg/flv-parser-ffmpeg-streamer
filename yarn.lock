@@ -136,6 +136,11 @@ isarray@2.0.1:
   version "2.0.1"
   resolved "https://registry.yarnpkg.com/isarray/-/isarray-2.0.1.tgz#a37d94ed9cda2d59865c9f76fe596ee1f338741e"
 
+lodash@^4.17.15:
+  version "4.17.15"
+  resolved "https://registry.yarnpkg.com/lodash/-/lodash-4.17.15.tgz#b447f6670a0455bbfeedd11392eff330ea097548"
+  integrity sha512-8xOcRHvCjnocdS5cpwXQXVzmmh5e5+saE2QGoeQmbKmRS6J3VQppPOIt0MnmE+4xlZoumy0GPG0D0MVIQbNA1A==
+
 lodash@^4.17.4:
   version "4.17.4"
   resolved "https://registry.yarnpkg.com/lodash/-/lodash-4.17.4.tgz#78203a4d1c328ae1d86dca6460e369b57f4055ae"
@@ -165,6 +170,15 @@ mkdirp@^0.5.1:
 ms@2.0.0:
   version "2.0.0"
   resolved "https://registry.yarnpkg.com/ms/-/ms-2.0.0.tgz#5608aeadfc00be6c2901df5f9861788de0d597c8"
+
+node-flv@^0.0.8:
+  version "0.0.8"
+  resolved "https://registry.yarnpkg.com/node-flv/-/node-flv-0.0.8.tgz#eede8870e1d4090c95b4daad903c69b1e65973ee"
+  integrity sha512-ibiXbU6rDKe/0b7LAWmJxCwJ4gZlSZ3UQu3PxmPjFgIVry5I49goEnqqExIxwfNVi+YDumWdLerqRc42bpA/Jw==
+  dependencies:
+    bitwise "^0.2.0"
+    lodash "^4.17.15"
+    stream-parser "^0.3.1"
 
 object-component@0.0.3:
   version "0.0.3"
