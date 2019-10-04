@@ -33,8 +33,6 @@ pausedStreamFlv.on('flv-packet', (flvPacket: FlvPacket) => {
     // do not write packets that have timestamp lower than the timestamp of a previous packet
     logger(['pausedStreamPackets', 'skipping saving for', flvPacket.flvPacketHeader.packetTypeEnum], true);
 
-    console.log(flvPacket.flvPacketHeader.timestampLower, lastPacket.flvPacketHeader.timestampLower);
-
     return;
   }
 
