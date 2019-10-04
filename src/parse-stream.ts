@@ -1,7 +1,15 @@
 import * as ReadLine from 'readline';
 import * as _ from 'lodash';
 import * as microseconds from 'microseconds';
-import { FlvStreamParser, FlvHeader, FlvPacket, PacketTypeEnum } from 'node-flv';
+import {
+  FlvStreamParser,
+  FlvHeader,
+  FlvPacket,
+  PacketTypeEnum,
+  FlvPacketAudio,
+  FlvPacketVideo,
+  FlvPacketMetadata
+} from 'node-flv';
 
 import { config } from '../config';
 import { pipeMainFile } from './ffmpeg-pipe';
@@ -28,27 +36,33 @@ mainStreamFlv.on('flv-header', (flvHeader: FlvHeader) => {
   mainStreamHeader = flvHeader;
 });
 
-let firstMetaDataPacket: FlvPacket = null;
 let firstAudioPacket: FlvPacket = null;
 let firstVideoPacket: FlvPacket = null;
+let firstMetaDataPacket: FlvPacket = null;
 
 mainStreamFlv.on('flv-packet', (flvPacket: FlvPacket) => {
   saveMainStreamPacket(flvPacket);
+});
 
-  if (!firstAudioPacket && flvPacket.flvPacketHeader.packetTypeEnum === PacketTypeEnum.AUDIO) {
-    logger(['flvStreamParser', flvPacket], true);
+mainStreamFlv.on('flv-packet-audio', (flvPacket: FlvPacketAudio) => {
+  if (!firstAudioPacket) {
+    logger(['flvStreamParser', flvPacket.audioData], true);
 
     firstAudioPacket = flvPacket;
   }
+});
 
-  if (!firstVideoPacket && flvPacket.flvPacketHeader.packetTypeEnum === PacketTypeEnum.VIDEO) {
-    logger(['flvStreamParser', flvPacket], true);
+mainStreamFlv.on('flv-packet-video', (flvPacket: FlvPacketVideo) => {
+  if (!firstVideoPacket) {
+    logger(['flvStreamParser', flvPacket.videoData], true);
 
     firstVideoPacket = flvPacket;
   }
+});
 
-  if (!firstMetaDataPacket && flvPacket.flvPacketHeader.packetTypeEnum === PacketTypeEnum.METADATA) {
-    logger(['flvStreamParser', flvPacket], true);
+mainStreamFlv.on('flv-packet-metadata', (flvPacket: FlvPacketMetadata) => {
+  if (!firstMetaDataPacket) {
+    logger(['flvStreamParser', flvPacket.metadata], true);
 
     firstMetaDataPacket = flvPacket;
   }
@@ -62,36 +76,9 @@ let flvStreamParserPacketCount: number = 0;
 pausedStreamFlv.on('flv-packet', (flvPacket: FlvPacket) => {
   flvStreamParserPacketCount++;
 
-  if (
-    flvPacket.flvPacketHeader.timestampLower === 0 &&
-    flvPacket.flvPacketHeader.packetTypeEnum === PacketTypeEnum.AUDIO
-  ) {
-    logger(['flvStreamParser2', flvPacket], true);
-  }
-
-  if (
-    flvPacket.flvPacketHeader.timestampLower === 0 &&
-    flvPacket.flvPacketHeader.packetTypeEnum === PacketTypeEnum.VIDEO
-  ) {
-    logger(['flvStreamParser2', flvPacket], true);
-  }
-
-  if (
-    flvPacket.flvPacketHeader.timestampLower === 0 &&
-    flvPacket.flvPacketHeader.packetTypeEnum === PacketTypeEnum.METADATA
-  ) {
-    logger(['flvStreamParser2', flvPacket], true);
-  }
-
   if (flvStreamParserPacketCount < 4) {
     return;
   }
-
-  //console.log(flvStreamParserPacketCount, flvPacket.header.packetType, flvPacket.header.timestampLower, flvPacket.header.payloadSize);
-
-  //if (flvPacket.header.packetType === 9) console.log(flvStreamParserPacketCount, parseVideo(flvPacket.payload));
-
-  //if (flvPacket.header.packetType === 18 && flvPacket.header.timestampLower === 0) return;
 
   const lastPacket = _.last(pausedStreamPackets);
 
@@ -100,11 +87,31 @@ pausedStreamFlv.on('flv-packet', (flvPacket: FlvPacket) => {
       pausedStreamPackets.push(flvPacket);
       pausedStreamPacketsCopy.push(flvPacket);
     } else {
-      logger(['savedPackets2', 'skipping saving for', flvPacket.flvPacketHeader.packetType], true);
+      logger(['savedPackets2', 'skipping saving for', flvPacket.flvPacketHeader.packetTypeEnum], true);
     }
   } else {
     pausedStreamPackets.push(flvPacket);
     pausedStreamPacketsCopy.push(flvPacket);
+  }
+});
+
+pausedStreamFlv.on('flv-packet-audio', (flvPacket: FlvPacketAudio) => {
+  if (flvPacket.flvPacketHeader.timestampLower === 0) {
+    logger(['flvStreamParser2', flvPacket.audioData], true);
+  }
+});
+
+pausedStreamFlv.on('flv-packet-video', (flvPacket: FlvPacketVideo) => {
+  if (flvPacket.flvPacketHeader.timestampLower === 0) {
+    logger(['flvStreamParser2', flvPacket.videoData], true);
+  }
+
+  // console.log(flvStreamParserPacketCount, flvPacket.videoData);
+});
+
+pausedStreamFlv.on('flv-packet-metadata', (flvPacket: FlvPacketMetadata) => {
+  if (flvPacket.flvPacketHeader.timestampLower === 0) {
+    logger(['flvStreamParser2', flvPacket.metadata], true);
   }
 });
 
@@ -131,7 +138,7 @@ function saveMainStreamPacket(flvPacket: FlvPacket) {
     if (flvPacket.flvPacketHeader.timestampLower >= lastPacket.flvPacketHeader.timestampLower) {
       mainStreamPackets.push(flvPacket);
     } else {
-      logger(['savedPackets', 'skipping saving for', flvPacket.flvPacketHeader.packetType], true);
+      logger(['savedPackets', 'skipping saving for', flvPacket.flvPacketHeader.packetTypeEnum], true);
     }
   } else {
     mainStreamPackets.push(flvPacket);

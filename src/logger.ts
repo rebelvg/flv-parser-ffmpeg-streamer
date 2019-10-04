@@ -15,7 +15,7 @@ export function logger(logs: any[], print: boolean = false) {
         return log;
       }
     })
-    .join(os.EOL);
+    .join(' ');
 
   if (print) {
     console.log(logsString);
