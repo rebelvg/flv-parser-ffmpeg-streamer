@@ -1,9 +1,7 @@
-import { FlvHeader, FlvPacket, PacketTypeEnum } from './flv';
-import { FlvStreamParser } from './flv-stream';
-
-import * as _ from 'lodash';
 import * as ReadLine from 'readline';
+import * as _ from 'lodash';
 import * as microseconds from 'microseconds';
+import { FlvStreamParser, FlvHeader, FlvPacket, PacketTypeEnum } from 'node-flv';
 
 import { config } from '../config';
 import { pipeMainFile } from './ffmpeg-pipe';
@@ -24,10 +22,10 @@ pausedStreamReadable.pipe(pausedStreamFlv);
 
 let mainStreamHeader: FlvHeader = null;
 
-mainStreamFlv.on('flv-header', (header: FlvHeader) => {
-  logger(['flv-header', header], true);
+mainStreamFlv.on('flv-header', (flvHeader: FlvHeader) => {
+  logger(['flv-header', flvHeader], true);
 
-  mainStreamHeader = header;
+  mainStreamHeader = flvHeader;
 });
 
 let firstMetaDataPacket: FlvPacket = null;
@@ -37,22 +35,22 @@ let firstVideoPacket: FlvPacket = null;
 mainStreamFlv.on('flv-packet', (flvPacket: FlvPacket) => {
   saveMainStreamPacket(flvPacket);
 
-  if (!firstMetaDataPacket && flvPacket.packetType === PacketTypeEnum.METADATA) {
-    logger(['flvStreamParser', flvPacket.metaData], true);
-
-    firstMetaDataPacket = flvPacket;
-  }
-
-  if (!firstAudioPacket && flvPacket.packetType === PacketTypeEnum.AUDIO) {
-    logger(['flvStreamParser', flvPacket.audioMetaData], true);
+  if (!firstAudioPacket && flvPacket.flvPacketHeader.packetTypeEnum === PacketTypeEnum.AUDIO) {
+    logger(['flvStreamParser', flvPacket], true);
 
     firstAudioPacket = flvPacket;
   }
 
-  if (!firstVideoPacket && flvPacket.packetType === PacketTypeEnum.VIDEO) {
-    logger(['flvStreamParser', flvPacket.videoMetaData], true);
+  if (!firstVideoPacket && flvPacket.flvPacketHeader.packetTypeEnum === PacketTypeEnum.VIDEO) {
+    logger(['flvStreamParser', flvPacket], true);
 
     firstVideoPacket = flvPacket;
+  }
+
+  if (!firstMetaDataPacket && flvPacket.flvPacketHeader.packetTypeEnum === PacketTypeEnum.METADATA) {
+    logger(['flvStreamParser', flvPacket], true);
+
+    firstMetaDataPacket = flvPacket;
   }
 });
 
@@ -64,16 +62,25 @@ let flvStreamParserPacketCount: number = 0;
 pausedStreamFlv.on('flv-packet', (flvPacket: FlvPacket) => {
   flvStreamParserPacketCount++;
 
-  if (flvPacket.header.timestampLower === 0 && flvPacket.packetType === PacketTypeEnum.METADATA) {
-    logger(['flvStreamParser2', flvPacket.metaData], true);
+  if (
+    flvPacket.flvPacketHeader.timestampLower === 0 &&
+    flvPacket.flvPacketHeader.packetTypeEnum === PacketTypeEnum.AUDIO
+  ) {
+    logger(['flvStreamParser2', flvPacket], true);
   }
 
-  if (flvPacket.header.timestampLower === 0 && flvPacket.packetType === PacketTypeEnum.AUDIO) {
-    logger(['flvStreamParser2', flvPacket.audioMetaData], true);
+  if (
+    flvPacket.flvPacketHeader.timestampLower === 0 &&
+    flvPacket.flvPacketHeader.packetTypeEnum === PacketTypeEnum.VIDEO
+  ) {
+    logger(['flvStreamParser2', flvPacket], true);
   }
 
-  if (flvPacket.header.timestampLower === 0 && flvPacket.packetType === PacketTypeEnum.VIDEO) {
-    logger(['flvStreamParser2', flvPacket.videoMetaData], true);
+  if (
+    flvPacket.flvPacketHeader.timestampLower === 0 &&
+    flvPacket.flvPacketHeader.packetTypeEnum === PacketTypeEnum.METADATA
+  ) {
+    logger(['flvStreamParser2', flvPacket], true);
   }
 
   if (flvStreamParserPacketCount < 4) {
@@ -89,11 +96,11 @@ pausedStreamFlv.on('flv-packet', (flvPacket: FlvPacket) => {
   const lastPacket = _.last(pausedStreamPackets);
 
   if (lastPacket) {
-    if (flvPacket.header.timestampLower >= lastPacket.header.timestampLower) {
+    if (flvPacket.flvPacketHeader.timestampLower >= lastPacket.flvPacketHeader.timestampLower) {
       pausedStreamPackets.push(flvPacket);
       pausedStreamPacketsCopy.push(flvPacket);
     } else {
-      logger(['savedPackets2', 'skipping saving for', flvPacket.header.packetType], true);
+      logger(['savedPackets2', 'skipping saving for', flvPacket.flvPacketHeader.packetType], true);
     }
   } else {
     pausedStreamPackets.push(flvPacket);
@@ -105,9 +112,9 @@ let prevPacket: FlvPacket = null;
 
 function writePacket(flvPacket: FlvPacket) {
   if (!prevPacket) {
-    flvPacket.header.prevPacketSize = 0;
+    flvPacket.flvPacketHeader.prevPacketSize = 0;
   } else {
-    flvPacket.header.prevPacketSize = 11 + prevPacket.header.payloadSize;
+    flvPacket.flvPacketHeader.prevPacketSize = 11 + prevPacket.flvPacketHeader.payloadSize;
   }
 
   outputFlvPacket(flvPacket);
@@ -121,10 +128,10 @@ function saveMainStreamPacket(flvPacket: FlvPacket) {
   const lastPacket = _.last(mainStreamPackets);
 
   if (lastPacket) {
-    if (flvPacket.header.timestampLower >= lastPacket.header.timestampLower) {
+    if (flvPacket.flvPacketHeader.timestampLower >= lastPacket.flvPacketHeader.timestampLower) {
       mainStreamPackets.push(flvPacket);
     } else {
-      logger(['savedPackets', 'skipping saving for', flvPacket.header.packetType], true);
+      logger(['savedPackets', 'skipping saving for', flvPacket.flvPacketHeader.packetType], true);
     }
   } else {
     mainStreamPackets.push(flvPacket);
@@ -202,16 +209,17 @@ async function writeSequence() {
 
     const clonedPacket = _.cloneDeep(packet);
 
-    clonedPacket.header.timestampLower = lastSwitchedTimestamp + packet.header.timestampLower - cursor.lastTimestamp;
+    clonedPacket.flvPacketHeader.timestampLower =
+      lastSwitchedTimestamp + packet.flvPacketHeader.timestampLower - cursor.lastTimestamp;
 
     let writingStartTime = microseconds.now();
 
     writePacket(clonedPacket);
 
-    if (lastTimestampsIndex === 0 && clonedPacket.packetType === PacketTypeEnum.VIDEO) {
-      const timestamp = clonedPacket.header.timestampLower;
+    if (lastTimestampsIndex === 0 && clonedPacket.flvPacketHeader.packetTypeEnum === PacketTypeEnum.VIDEO) {
+      const timestamp = clonedPacket.flvPacketHeader.timestampLower;
 
-      const text = getSubtitle(packet.header.timestampLower);
+      const text = getSubtitle(packet.flvPacketHeader.timestampLower);
 
       publishSubtitles(timestamp, text);
     }
@@ -227,12 +235,12 @@ async function writeSequence() {
     let waitTime: number = 0;
 
     const threshold: number =
-      clonedPacket.header.timestampLower - (Date.now() - startTime) + drainingWaitingTime / 1000;
+      clonedPacket.flvPacketHeader.timestampLower - (Date.now() - startTime) + drainingWaitingTime / 1000;
 
     if (nextPacket) {
       waitTime =
-        nextPacket.header.timestampLower * 1000 -
-        packet.header.timestampLower * 1000 -
+        nextPacket.flvPacketHeader.timestampLower * 1000 -
+        packet.flvPacketHeader.timestampLower * 1000 -
         (writingEndTime - writingStartTime) -
         timestampDebt;
 
@@ -256,20 +264,20 @@ async function writeSequence() {
         runningTime: Date.now() - startTime,
         drainingWaitingTime: drainingWaitingTime / 1000,
         lastTimestamp,
-        currentTimestamp: packet.header.timestampLower,
+        currentTimestamp: packet.flvPacketHeader.timestampLower,
         nextPacketTimestamp: _.get(nextPacket, ['header', 'timestampLower'], 'no-next-packet'),
         currentPacketsLeft: cursor.savedPackets.length,
         waitTime: waitTime / 1000,
         debt: timestampDebt / 1000,
         writeTime: (writingEndTime - writingStartTime) / 1000,
         lastSwitchedTimestamp,
-        clonedPacketTimestamp: clonedPacket.header.timestampLower,
+        clonedPacketTimestamp: clonedPacket.flvPacketHeader.timestampLower,
         cursorLastTimestamp: cursor.lastTimestamp
       }
     ]);
 
-    lastTimestamp = clonedPacket.header.timestampLower;
-    lastPacketTimestamp = packet.header.timestampLower;
+    lastTimestamp = clonedPacket.flvPacketHeader.timestampLower;
+    lastPacketTimestamp = packet.flvPacketHeader.timestampLower;
 
     cursor.savedPackets.shift();
 
@@ -277,11 +285,17 @@ async function writeSequence() {
       cursor.savedPackets = _.cloneDeep(pausedStreamPacketsCopy);
 
       _.forEach(cursor.savedPackets, flvPacket => {
-        flvPacket.header.timestampLower =
-          packet.header.timestampLower + flvPacket.header.timestampLower - Math.ceil(1000 / config.framerate);
+        flvPacket.flvPacketHeader.timestampLower =
+          packet.flvPacketHeader.timestampLower +
+          flvPacket.flvPacketHeader.timestampLower -
+          Math.ceil(1000 / config.framerate);
       });
 
-      logger(['cloned packets.', packet.header.timestampLower, _.first(cursor.savedPackets).header.timestampLower]);
+      logger([
+        'cloned packets.',
+        packet.flvPacketHeader.timestampLower,
+        _.first(cursor.savedPackets).flvPacketHeader.timestampLower
+      ]);
     }
 
     if (lastTimestampsIndex === 0 && cursor.savedPackets.length === 0) {
