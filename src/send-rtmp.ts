@@ -1,12 +1,9 @@
-import * as fs from 'fs';
-import * as _ from 'lodash';
 import * as childProcess from 'child_process';
+import { Writable } from 'stream';
+import * as _ from 'lodash';
 
 import { config } from '../config';
-
 import { logger } from './logger';
-
-import { Writable } from 'stream';
 
 export function sendRtmp(): Writable {
   const publishLink = _.get(config.publishLinks, [config.publishLink], '-');

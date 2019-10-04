@@ -1,10 +1,9 @@
 import * as fs from 'fs';
-import * as _ from 'lodash';
 import * as childProcess from 'child_process';
+import { Readable } from 'stream';
+import * as _ from 'lodash';
 
 import { config } from '../config';
-
-import { Readable } from 'stream';
 
 export function preparePaused(): Readable {
   let ffmpegProcessVideo: childProcess.ChildProcess;

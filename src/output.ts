@@ -1,9 +1,8 @@
 import { Writable } from 'stream';
 import { FlvHeader, FlvPacket } from 'node-flv';
 
-import { sendRtmp } from './send-rtmp';
-
 import { config } from '../config';
+import { sendRtmp } from './send-rtmp';
 import { publishFlvHeader, publishFlvPacket } from './socket-publisher';
 
 let ffmpegSendProcess: Writable;
