@@ -1,4 +1,4 @@
-import { FlvStreamParser, FlvHeader, FlvPacket, FlvPacketAudio, FlvPacketVideo, FlvPacketMetadata } from 'node-flv';
+import { FlvStreamParser, FlvPacket, FlvPacketAudio, FlvPacketVideo, FlvPacketMetadata } from 'node-flv';
 import * as _ from 'lodash';
 
 import { preparePaused } from './prepare-paused';

@@ -1,6 +1,6 @@
 import * as _ from 'lodash';
 import * as microseconds from 'microseconds';
-import { FlvPacket, PacketTypeEnum } from 'node-flv';
+import { FlvPacket, FlvPacketType } from 'node-flv';
 
 import { config } from '../config';
 import { logger } from './logger';
@@ -82,7 +82,7 @@ async function writeSequence() {
 
     writePacket(clonedPacket);
 
-    if (lastTimestampsIndex === 0 && clonedPacket.flvPacketHeader.packetTypeEnum === PacketTypeEnum.VIDEO) {
+    if (lastTimestampsIndex === 0 && clonedPacket.flvPacketHeader.packetTypeEnum === FlvPacketType.VIDEO) {
       const timestamp = clonedPacket.flvPacketHeader.timestampLower;
 
       const text = getSubtitle(flvPacket.flvPacketHeader.timestampLower);
