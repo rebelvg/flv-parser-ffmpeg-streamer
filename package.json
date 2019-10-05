@@ -9,7 +9,7 @@
     "bitwise": "^0.2.0",
     "lodash": "^4.17.13",
     "microseconds": "^0.1.0",
-    "node-flv": "^0.0.14",
+    "node-flv": "^0.0.20",
     "socket.io-client": "^2.1.1",
     "stream-parser": "^0.3.1",
     "subtitle": "^2.0.0"

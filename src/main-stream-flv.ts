@@ -59,9 +59,9 @@ function saveMainStreamPacket(flvPacket: FlvPacket) {
     return;
   }
 
-  if (flvPacket.flvPacketHeader.timestampLower < lastPacket.flvPacketHeader.timestampLower) {
+  if (flvPacket.header.timestampLower < lastPacket.header.timestampLower) {
     // do not write packets that have timestamp lower than the timestamp of a previous packet
-    logger(['mainStreamPackets', 'skipping saving for', flvPacket.flvPacketHeader.packetTypeEnum], true);
+    logger(['mainStreamPackets', 'skipping saving for', flvPacket.header.type], true);
 
     return;
   }

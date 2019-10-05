@@ -29,9 +29,9 @@ pausedStreamFlv.on('flv-packet', (flvPacket: FlvPacket) => {
     return;
   }
 
-  if (flvPacket.flvPacketHeader.timestampLower < lastPacket.flvPacketHeader.timestampLower) {
+  if (flvPacket.header.timestampLower < lastPacket.header.timestampLower) {
     // do not write packets that have timestamp lower than the timestamp of a previous packet
-    logger(['pausedStreamPackets', 'skipping saving for', flvPacket.flvPacketHeader.packetTypeEnum], true);
+    logger(['pausedStreamPackets', 'skipping saving for', flvPacket.header.type], true);
 
     return;
   }
@@ -41,13 +41,13 @@ pausedStreamFlv.on('flv-packet', (flvPacket: FlvPacket) => {
 });
 
 pausedStreamFlv.on('flv-packet-audio', (flvPacket: FlvPacketAudio) => {
-  if (flvPacket.flvPacketHeader.timestampLower === 0) {
+  if (flvPacket.header.timestampLower === 0) {
     logger(['pausedStreamFlv audio', flvPacket.data], true);
   }
 });
 
 pausedStreamFlv.on('flv-packet-video', (flvPacket: FlvPacketVideo) => {
-  if (flvPacket.flvPacketHeader.timestampLower === 0) {
+  if (flvPacket.header.timestampLower === 0) {
     logger(['pausedStreamFlv video', flvPacket.data], true);
   }
 
@@ -55,7 +55,7 @@ pausedStreamFlv.on('flv-packet-video', (flvPacket: FlvPacketVideo) => {
 });
 
 pausedStreamFlv.on('flv-packet-metadata', (flvPacket: FlvPacketMetadata) => {
-  if (flvPacket.flvPacketHeader.timestampLower === 0) {
+  if (flvPacket.header.timestampLower === 0) {
     logger(['pausedStreamFlv metadata', flvPacket.data], true);
   }
 });

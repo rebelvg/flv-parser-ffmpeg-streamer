@@ -13,7 +13,7 @@ if (config.publishLink) {
 
 export function outputFlvHeader(flvHeader: FlvHeader) {
   if (ffmpegSendProcess) {
-    ffmpegSendProcess.write(flvHeader.buildHeader());
+    ffmpegSendProcess.write(flvHeader.build());
   }
 
   publishFlvHeader(flvHeader);
@@ -21,7 +21,7 @@ export function outputFlvHeader(flvHeader: FlvHeader) {
 
 export function outputFlvPacket(flvPacket: FlvPacket) {
   if (ffmpegSendProcess) {
-    ffmpegSendProcess.write(flvPacket.buildPacket());
+    ffmpegSendProcess.write(flvPacket.build());
   }
 
   publishFlvPacket(flvPacket);
@@ -31,9 +31,9 @@ let prevPacket: FlvPacket = null;
 
 export function writePacket(flvPacket: FlvPacket) {
   if (!prevPacket) {
-    flvPacket.flvPacketHeader.prevPacketSize = 0;
+    flvPacket.header.prevPacketSize = 0;
   } else {
-    flvPacket.flvPacketHeader.prevPacketSize = 11 + prevPacket.flvPacketHeader.payloadSize;
+    flvPacket.header.prevPacketSize = 11 + prevPacket.payload.length;
   }
 
   outputFlvPacket(flvPacket);
