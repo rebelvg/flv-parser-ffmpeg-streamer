@@ -33,7 +33,7 @@ export function writePacket(flvPacket: FlvPacket) {
   if (!prevPacket) {
     flvPacket.header.prevPacketSize = 0;
   } else {
-    flvPacket.header.prevPacketSize = 11 + prevPacket.payload.length;
+    flvPacket.header.prevPacketSize = prevPacket.size;
   }
 
   outputFlvPacket(flvPacket);
