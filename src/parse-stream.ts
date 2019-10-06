@@ -1,5 +1,4 @@
 import * as _ from 'lodash';
-import * as microseconds from 'microseconds';
 import { FlvPacket, FlvPacketType } from 'node-flv';
 
 import { config } from '../config';
@@ -49,16 +48,14 @@ async function writeSequence() {
 
     logger(['waiting at least 5 packets'], true);
 
-    await sleep(1000 * 1000);
+    await sleep(1000);
   }
 
-  await sleep(5 * 1000 * 1000);
+  await sleep(5 * 1000);
 
   const startTime = Date.now();
 
   outputFlvHeader(mainStreamHeader);
-
-  let drainingWaitingTime: number = 0;
 
   while (true) {
     const cursor = lastTimestamps[lastTimestampsIndex];
@@ -68,46 +65,43 @@ async function writeSequence() {
     if (!flvPacket) {
       logger(['packet not found, skipping...'], true);
 
-      await sleep(1000);
+      await sleep(1);
 
       continue;
     }
 
+    const {
+      header: { timestampLower: cursorTimestampLower }
+    } = flvPacket;
+
     const clonedPacket = _.cloneDeep(flvPacket);
 
-    clonedPacket.header.timestampLower = lastSwitchedTimestamp + flvPacket.header.timestampLower - cursor.lastTimestamp;
+    const latestStreamTimestampLower = lastSwitchedTimestamp + cursorTimestampLower - cursor.lastTimestamp;
 
-    let writingStartTime = microseconds.now();
+    clonedPacket.header.timestampLower = latestStreamTimestampLower;
 
     writePacket(clonedPacket);
 
     if (lastTimestampsIndex === 0 && clonedPacket.header.type === FlvPacketType.VIDEO) {
-      const timestamp = clonedPacket.header.timestampLower;
+      const timestamp = latestStreamTimestampLower;
 
-      const text = getSubtitle(flvPacket.header.timestampLower);
+      const text = getSubtitle(cursorTimestampLower);
 
       publishSubtitles(timestamp, text);
     }
-
-    const writingEndTime: number = microseconds.now();
-
-    const drainingStartTime: number = microseconds.now();
-
-    drainingWaitingTime += microseconds.now() - drainingStartTime;
 
     const nextPacket = cursor.savedPackets[1];
 
     let waitTime: number = 0;
 
-    const threshold: number =
-      clonedPacket.header.timestampLower - (Date.now() - startTime) + drainingWaitingTime / 1000;
+    const threshold: number = latestStreamTimestampLower - (Date.now() - startTime);
+
+    console.log('threshold', threshold);
 
     if (nextPacket) {
-      waitTime =
-        nextPacket.header.timestampLower * 1000 -
-        flvPacket.header.timestampLower * 1000 -
-        (writingEndTime - writingStartTime) -
-        timestampDebt;
+      waitTime = nextPacket.header.timestampLower - cursorTimestampLower - timestampDebt;
+
+      console.log('waitTime', waitTime);
 
       if (waitTime > 0) {
         timestampDebt = 0;
@@ -115,34 +109,34 @@ async function writeSequence() {
         if (threshold > 200) {
           await sleep(waitTime);
         } else {
-          await sleep(waitTime - 1000);
+          await sleep(waitTime - 1);
         }
       } else {
         timestampDebt = waitTime * -1;
       }
     }
 
+    /*
     logger([
       'writing packet...',
       {
         threshold,
         runningTime: Date.now() - startTime,
-        drainingWaitingTime: drainingWaitingTime / 1000,
         lastTimestamp,
-        currentTimestamp: flvPacket.header.timestampLower,
+        currentTimestamp: cursorTimestampLower,
         nextPacketTimestamp: _.get(nextPacket, ['header', 'timestampLower'], 'no-next-packet'),
         currentPacketsLeft: cursor.savedPackets.length,
-        waitTime: waitTime / 1000,
-        debt: timestampDebt / 1000,
-        writeTime: (writingEndTime - writingStartTime) / 1000,
+        waitTime,
+        debt: timestampDebt,
         lastSwitchedTimestamp,
-        clonedPacketTimestamp: clonedPacket.header.timestampLower,
+        clonedPacketTimestamp: latestStreamTimestampLower,
         cursorLastTimestamp: cursor.lastTimestamp
       }
     ]);
+    */
 
-    lastTimestamp = clonedPacket.header.timestampLower;
-    lastPacketTimestamp = flvPacket.header.timestampLower;
+    lastTimestamp = latestStreamTimestampLower;
+    lastPacketTimestamp = cursorTimestampLower;
 
     cursor.savedPackets.shift();
 
@@ -150,11 +144,10 @@ async function writeSequence() {
       cursor.savedPackets = _.cloneDeep(pausedStreamPacketsCopy);
 
       _.forEach(cursor.savedPackets, flvPacket => {
-        flvPacket.header.timestampLower =
-          flvPacket.header.timestampLower + flvPacket.header.timestampLower - Math.ceil(1000 / config.framerate);
+        flvPacket.header.timestampLower += cursorTimestampLower - Math.ceil(1000 / config.framerate);
       });
 
-      logger(['cloned packets.', flvPacket.header.timestampLower, _.first(cursor.savedPackets).header.timestampLower]);
+      logger(['cloned packets.', cursorTimestampLower, _.first(cursor.savedPackets).header.timestampLower]);
     }
 
     if (lastTimestampsIndex === 0 && cursor.savedPackets.length === 0) {

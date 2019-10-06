@@ -1,5 +1,5 @@
-export function sleep(mcs: number) {
+export function sleep(ms: number) {
   return new Promise(resolve => {
-    setTimeout(resolve, mcs / 1000);
+    setTimeout(resolve, ms);
   });
 }
