@@ -45,7 +45,7 @@ async function writeSequence() {
       break;
     }
 
-    logger(['waiting at least 5 packets'], true);
+    logger(['waiting for at least 5 packets'], true);
 
     await sleep(1000);
   }
