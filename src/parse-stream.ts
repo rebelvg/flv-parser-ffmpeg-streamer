@@ -11,9 +11,8 @@ import { mainStreamPackets, mainStreamHeader } from './main-stream-flv';
 import { pausedStreamPackets, pausedStreamPacketsCopy } from './paused-stream-flv';
 import { attachReadline } from './readline';
 
-let lastTimestamp: number = 0;
-let timestampDebt: number = 0;
-let lastTimestampsIndex: number = 0;
+let lastTimestamp = 0;
+let lastTimestampsIndex = 0;
 
 interface ICursor {
   lastTimestamp: number;
@@ -35,8 +34,8 @@ const lastTimestamps: ILastTimestamps = {
   }
 };
 
-let lastSwitchedTimestamp: number = 0;
-let lastPacketTimestamp: number = 0;
+let lastSwitchedTimestamp = 0;
+let lastPacketTimestamp = 0;
 
 async function writeSequence() {
   logger(['writing...'], true);
@@ -92,31 +91,20 @@ async function writeSequence() {
 
     const nextPacket = cursor.savedPackets[1];
 
-    let waitTime: number = 0;
+    let waitTime = 0;
 
-    const threshold: number = latestStreamTimestampLower - (Date.now() - startTime);
-
-    console.log('threshold', threshold);
+    const threshold = latestStreamTimestampLower - (Date.now() - startTime);
 
     if (nextPacket) {
-      waitTime = nextPacket.header.timestampLower - cursorTimestampLower - timestampDebt;
+      waitTime = nextPacket.header.timestampLower - cursorTimestampLower;
 
-      console.log('waitTime', waitTime);
-
-      if (waitTime > 0) {
-        timestampDebt = 0;
-
-        if (threshold > 200) {
-          await sleep(waitTime);
-        } else {
-          await sleep(waitTime - 1);
-        }
+      if (threshold > 200) {
+        await sleep(waitTime);
       } else {
-        timestampDebt = waitTime * -1;
+        await sleep(waitTime / 2);
       }
     }
 
-    /*
     logger([
       'writing packet...',
       {
@@ -127,13 +115,11 @@ async function writeSequence() {
         nextPacketTimestamp: _.get(nextPacket, ['header', 'timestampLower'], 'no-next-packet'),
         currentPacketsLeft: cursor.savedPackets.length,
         waitTime,
-        debt: timestampDebt,
         lastSwitchedTimestamp,
         clonedPacketTimestamp: latestStreamTimestampLower,
         cursorLastTimestamp: cursor.lastTimestamp
       }
     ]);
-    */
 
     lastTimestamp = latestStreamTimestampLower;
     lastPacketTimestamp = cursorTimestampLower;
