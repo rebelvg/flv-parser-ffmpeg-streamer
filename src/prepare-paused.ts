@@ -51,7 +51,7 @@ export function preparePaused(): Readable {
   } else {
     ffmpegProcessVideo = childProcess.spawn(
       config.ffmpegPath,
-      ['-i', config.videoFile, '-t', '0.3', '-vcodec', 'copy', '-an', '-f', 'flv', '-'],
+      ['-i', config.videoFilePath, '-t', '0.3', '-vcodec', 'copy', '-an', '-f', 'flv', '-'],
       {
         stdio: 'pipe'
       }

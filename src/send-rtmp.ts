@@ -37,11 +37,11 @@ export function sendRtmp(): Writable {
   // };
 
   if (publishLink === '-') {
-    const mpcProcess = childProcess.spawn(config.mpcPath, ['playpath', '-'], { stdio: 'pipe' });
+    const clientProcess = childProcess.spawn(config.clientPath, config.clientArgs, { stdio: 'pipe' });
 
-    ffmpegProcess.stdout.pipe(mpcProcess.stdin);
+    ffmpegProcess.stdout.pipe(clientProcess.stdin);
 
-    mpcProcess.on('exit', () => {
+    clientProcess.on('exit', () => {
       throw new Error('Player closed.');
     });
   }
