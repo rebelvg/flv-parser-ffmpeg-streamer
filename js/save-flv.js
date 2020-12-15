@@ -24,7 +24,7 @@ let packetsToBuffer = [];
 let firstVideoPacket = null;
 let firstAudioPacket = null;
 
-_.forEach(parsedFlv.contentPackets, flvPacket => {
+_.forEach(parsedFlv.contentPackets, (flvPacket) => {
   if (!firstVideoPacket && flvPacket.packetType === 9) {
     packetsToBuffer.push(flvPacket);
 
@@ -49,7 +49,7 @@ function writePacketSequence(where, what) {
 
   what = _.cloneDeep(what);
 
-  _.forEach(what, flvPacket => {
+  _.forEach(what, (flvPacket) => {
     if (!firstPacket) {
       firstPacket = flvPacket;
 

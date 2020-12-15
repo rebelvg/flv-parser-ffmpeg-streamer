@@ -8,7 +8,10 @@ import { getSubtitle } from './subtitles-parser';
 import { outputFlvHeader, writePacket } from './output';
 import { sleep } from './helpers';
 import { mainStreamPackets, mainStreamHeader } from './main-stream-flv';
-import { pausedStreamPackets, pausedStreamPacketsCopy } from './paused-stream-flv';
+import {
+  pausedStreamPackets,
+  pausedStreamPacketsCopy,
+} from './paused-stream-flv';
 import { attachReadline } from './readline';
 
 let lastTimestamp = 0;
@@ -26,12 +29,12 @@ interface ILastTimestamps {
 const lastTimestamps: ILastTimestamps = {
   0: {
     lastTimestamp: 0,
-    savedPackets: mainStreamPackets
+    savedPackets: mainStreamPackets,
   },
   1: {
     lastTimestamp: 0,
-    savedPackets: pausedStreamPackets
-  }
+    savedPackets: pausedStreamPackets,
+  },
 };
 
 let lastSwitchedTimestamp = 0;
@@ -70,18 +73,22 @@ async function writeSequence() {
     }
 
     const {
-      header: { timestampLower: cursorTimestampLower }
+      header: { timestampLower: cursorTimestampLower },
     } = flvPacket;
 
     const clonedPacket = _.cloneDeep(flvPacket);
 
-    const latestStreamTimestampLower = lastSwitchedTimestamp + cursorTimestampLower - cursor.lastTimestamp;
+    const latestStreamTimestampLower =
+      lastSwitchedTimestamp + cursorTimestampLower - cursor.lastTimestamp;
 
     clonedPacket.header.timestampLower = latestStreamTimestampLower;
 
     writePacket(clonedPacket);
 
-    if (lastTimestampsIndex === 0 && clonedPacket.header.type === FlvPacketType.VIDEO) {
+    if (
+      lastTimestampsIndex === 0 &&
+      clonedPacket.header.type === FlvPacketType.VIDEO
+    ) {
       const timestamp = latestStreamTimestampLower;
 
       const text = getSubtitle(cursorTimestampLower);
@@ -112,13 +119,17 @@ async function writeSequence() {
         runningTime: Date.now() - startTime,
         lastTimestamp,
         currentTimestamp: cursorTimestampLower,
-        nextPacketTimestamp: _.get(nextPacket, ['header', 'timestampLower'], 'no-next-packet'),
+        nextPacketTimestamp: _.get(
+          nextPacket,
+          ['header', 'timestampLower'],
+          'no-next-packet',
+        ),
         currentPacketsLeft: cursor.savedPackets.length,
         waitTime,
         lastSwitchedTimestamp,
         clonedPacketTimestamp: latestStreamTimestampLower,
-        cursorLastTimestamp: cursor.lastTimestamp
-      }
+        cursorLastTimestamp: cursor.lastTimestamp,
+      },
     ]);
 
     lastTimestamp = latestStreamTimestampLower;
@@ -129,11 +140,16 @@ async function writeSequence() {
     if (lastTimestampsIndex === 1 && cursor.savedPackets.length === 0) {
       cursor.savedPackets = _.cloneDeep(pausedStreamPacketsCopy);
 
-      _.forEach(cursor.savedPackets, flvPacket => {
-        flvPacket.header.timestampLower += cursorTimestampLower - Math.ceil(1000 / config.framerate);
+      _.forEach(cursor.savedPackets, (flvPacket) => {
+        flvPacket.header.timestampLower +=
+          cursorTimestampLower - Math.ceil(1000 / config.framerate);
       });
 
-      logger(['cloned packets.', cursorTimestampLower, _.first(cursor.savedPackets).header.timestampLower]);
+      logger([
+        'cloned packets.',
+        cursorTimestampLower,
+        _.first(cursor.savedPackets).header.timestampLower,
+      ]);
     }
 
     if (lastTimestampsIndex === 0 && cursor.savedPackets.length === 0) {

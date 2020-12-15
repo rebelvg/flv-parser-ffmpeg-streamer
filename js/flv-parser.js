@@ -2,7 +2,11 @@ const fs = require('fs');
 const _ = require('lodash');
 const bitwise = require('bitwise');
 
-const { parseMetadata, parseAudio, parseVideo } = require('./modules/parse-data');
+const {
+  parseMetadata,
+  parseAudio,
+  parseVideo,
+} = require('./modules/parse-data');
 
 class FlvPacket {
   constructor(packetPos, fileBuffer) {
@@ -15,7 +19,10 @@ class FlvPacket {
     this.timestampLower = packetHeader.readUIntBE(8, 3);
     this.timestampUpper = packetHeader.readUInt8(11);
     this.streamId = packetHeader.readUIntBE(12, 3);
-    this.payload = fileBuffer.slice(packetPos + 15, packetPos + 15 + this.payloadSize);
+    this.payload = fileBuffer.slice(
+      packetPos + 15,
+      packetPos + 15 + this.payloadSize,
+    );
 
     this.packetStart = packetPos;
     this.fullPacketSize = 15 + this.payloadSize;
@@ -38,7 +45,7 @@ class FlvPacket {
 
 function parseFlv(fileName) {
   let flvFile = fs.readFileSync(fileName, {
-    encoding: null
+    encoding: null,
   });
 
   console.log(flvFile.toString('utf8', 0, 3));
@@ -57,7 +64,7 @@ function parseFlv(fileName) {
     signature: 'FLV',
     version: version,
     flags: flags,
-    headerSize: headerSize
+    headerSize: headerSize,
   };
 
   let firstPacket = new FlvPacket(headerSize, flvFile);
@@ -114,17 +121,17 @@ function parseFlv(fileName) {
   console.log('n of packets', contentPackets.length);
   console.log(
     'content payload size',
-    contentPackets.reduce(function(accumulator, currentValue) {
+    contentPackets.reduce(function (accumulator, currentValue) {
       return accumulator + currentValue.payloadSize;
     }, 0) /
       1024 /
-      1024
+      1024,
   );
 
   return {
     header: header,
     firstPacket: firstPacket,
-    contentPackets: contentPackets
+    contentPackets: contentPackets,
   };
 }
 

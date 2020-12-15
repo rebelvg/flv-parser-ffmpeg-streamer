@@ -30,7 +30,7 @@ export function pipeMainFile(): Readable {
       '256k',
       '-f',
       'flv',
-      '-'
+      '-',
     ];
   } else {
     ffmpegParams = [
@@ -46,7 +46,9 @@ export function pipeMainFile(): Readable {
       '-vcodec',
       'libx264',
       '-vf',
-      `crop=iw:ih-${config.cropHeight * 2}:0:${config.cropHeight}, scale=${config.scaleWidth}:-2`,
+      `crop=iw:ih-${config.cropHeight * 2}:0:${config.cropHeight}, scale=${
+        config.scaleWidth
+      }:-2`,
       '-tune',
       'grain',
       '-b:v',
@@ -63,12 +65,12 @@ export function pipeMainFile(): Readable {
       '256k',
       '-f',
       'flv',
-      '-'
+      '-',
     ];
   }
 
   const ffmpegProcess = childProcess.spawn(config.ffmpegPath, ffmpegParams, {
-    stdio: 'pipe'
+    stdio: 'pipe',
   });
 
   //const fileReadStream = fs.createReadStream(fileReadPath);

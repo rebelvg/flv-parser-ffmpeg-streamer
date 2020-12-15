@@ -42,19 +42,30 @@ export function preparePaused(): Readable {
         'yuv420p',
         '-f',
         'flv',
-        '-'
+        '-',
       ],
       {
-        stdio: 'pipe'
-      }
+        stdio: 'pipe',
+      },
     );
   } else {
     ffmpegProcessVideo = childProcess.spawn(
       config.ffmpegPath,
-      ['-i', config.videoFilePath, '-t', '0.3', '-vcodec', 'copy', '-an', '-f', 'flv', '-'],
+      [
+        '-i',
+        config.videoFilePath,
+        '-t',
+        '0.3',
+        '-vcodec',
+        'copy',
+        '-an',
+        '-f',
+        'flv',
+        '-',
+      ],
       {
-        stdio: 'pipe'
-      }
+        stdio: 'pipe',
+      },
     );
   }
 
@@ -80,11 +91,11 @@ export function preparePaused(): Readable {
       '-shortest',
       '-f',
       'flv',
-      '-'
+      '-',
     ],
     {
-      stdio: 'pipe'
-    }
+      stdio: 'pipe',
+    },
   );
 
   // ffmpegProcessVideo.stderr.pipe(process.stdout);

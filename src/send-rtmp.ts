@@ -22,11 +22,11 @@ export function sendRtmp(): Writable {
       'copy',
       '-f',
       'flv',
-      publishLink
+      publishLink,
     ],
     {
-      stdio: 'pipe'
-    }
+      stdio: 'pipe',
+    },
   );
 
   // const outputVideo = fs.createWriteStream('output.flv');
@@ -37,7 +37,11 @@ export function sendRtmp(): Writable {
   // };
 
   if (publishLink === '-') {
-    const clientProcess = childProcess.spawn(config.clientPath, config.clientArgs, { stdio: 'pipe' });
+    const clientProcess = childProcess.spawn(
+      config.clientPath,
+      config.clientArgs,
+      { stdio: 'pipe' },
+    );
 
     ffmpegProcess.stdout.pipe(clientProcess.stdin);
 
@@ -48,7 +52,7 @@ export function sendRtmp(): Writable {
 
   ffmpegProcess.stderr.setEncoding('utf8');
 
-  ffmpegProcess.stderr.on('data', data => {
+  ffmpegProcess.stderr.on('data', (data) => {
     logger(['send-rtmp', data]);
   });
 

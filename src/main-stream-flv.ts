@@ -1,4 +1,11 @@
-import { FlvStreamParser, FlvHeader, FlvPacket, FlvPacketAudio, FlvPacketVideo, FlvPacketMetadata } from 'node-flv';
+import {
+  FlvStreamParser,
+  FlvHeader,
+  FlvPacket,
+  FlvPacketAudio,
+  FlvPacketVideo,
+  FlvPacketMetadata,
+} from 'node-flv';
 import * as _ from 'lodash';
 
 import { pipeMainFile } from './ffmpeg-pipe';
@@ -61,7 +68,10 @@ function saveMainStreamPacket(flvPacket: FlvPacket) {
 
   if (flvPacket.header.timestampLower < lastPacket.header.timestampLower) {
     // do not write packets that have timestamp lower than the timestamp of a previous packet
-    logger(['mainStreamPackets', 'skipping saving for', flvPacket.header.type], true);
+    logger(
+      ['mainStreamPackets', 'skipping saving for', flvPacket.header.type],
+      true,
+    );
 
     return;
   }

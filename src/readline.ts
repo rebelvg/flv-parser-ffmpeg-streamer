@@ -5,10 +5,10 @@ import { switchVideoRequest } from './parse-stream';
 export function attachReadline() {
   const readLine = ReadLine.createInterface({
     input: process.stdin,
-    output: process.stdout
+    output: process.stdout,
   });
 
-  readLine.on('line', line => {
+  readLine.on('line', (line) => {
     if (line === 's') {
       switchVideoRequest();
     }

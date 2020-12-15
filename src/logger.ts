@@ -8,7 +8,7 @@ fs.writeFileSync(LOGS_PATH, ['log created.'].join(' ') + os.EOL);
 
 export function logger(logs: any[], print: boolean = false) {
   const logsString: string = logs
-    .map(log => {
+    .map((log) => {
       if (typeof log === 'object') {
         return JSON.stringify(log, null, 2);
       } else {

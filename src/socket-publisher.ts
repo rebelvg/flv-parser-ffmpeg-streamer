@@ -13,7 +13,7 @@ export function publishSubtitles(timestamp: number, text: string) {
   if (socket) {
     socket.emit('subtitles', {
       timestamp,
-      text
+      text,
     });
   }
 }
@@ -21,7 +21,7 @@ export function publishSubtitles(timestamp: number, text: string) {
 export function publishFlvHeader(flvHeader: FlvHeader) {
   if (socket) {
     socket.emit('flv_header', {
-      flvHeader
+      flvHeader,
     });
   }
 }
@@ -29,7 +29,7 @@ export function publishFlvHeader(flvHeader: FlvHeader) {
 export function publishFlvPacket(flvPacket: FlvPacket) {
   if (socket) {
     socket.emit('flv_packet', {
-      flvPacket
+      flvPacket,
     });
   }
 }

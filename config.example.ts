@@ -14,8 +14,8 @@ export const config = {
   publishLink: 'client',
   publishLinks: {
     client: '-',
-    rtmp: 'rtmp://localhost/app/channel'
+    rtmp: 'rtmp://localhost/app/channel',
   },
   socketServer: 'http://localhost:3000',
-  subtitlesFile: 'video.srt'
+  subtitlesFile: 'video.srt',
 };

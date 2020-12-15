@@ -1,4 +1,10 @@
-import { FlvStreamParser, FlvPacket, FlvPacketAudio, FlvPacketVideo, FlvPacketMetadata } from 'node-flv';
+import {
+  FlvStreamParser,
+  FlvPacket,
+  FlvPacketAudio,
+  FlvPacketVideo,
+  FlvPacketMetadata,
+} from 'node-flv';
 import * as _ from 'lodash';
 
 import { preparePaused } from './prepare-paused';
@@ -31,7 +37,10 @@ pausedStreamFlv.on('flv-packet', (flvPacket: FlvPacket) => {
 
   if (flvPacket.header.timestampLower < lastPacket.header.timestampLower) {
     // do not write packets that have timestamp lower than the timestamp of a previous packet
-    logger(['pausedStreamPackets', 'skipping saving for', flvPacket.header.type], true);
+    logger(
+      ['pausedStreamPackets', 'skipping saving for', flvPacket.header.type],
+      true,
+    );
 
     return;
   }

@@ -5,7 +5,7 @@ import * as Subtitles from 'subtitle';
 import { config } from '../config';
 
 const subtitlesFile = fs.readFileSync(config.subtitlesFile, {
-  encoding: 'utf-8'
+  encoding: 'utf-8',
 });
 
 const subtitles = Subtitles.parse(subtitlesFile);
@@ -19,7 +19,7 @@ export function getSubtitle(timestamp: number): string {
     parseInt(videoStart[1]) * 60 * 1000 +
     parseInt(videoStart[2]) * 1000;
 
-  const subtitle = _.find(subtitles, subtitle => {
+  const subtitle = _.find(subtitles, (subtitle) => {
     return subtitle.start <= timestamp && subtitle.end >= timestamp;
   });
 
